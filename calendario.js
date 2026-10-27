@@ -11,14 +11,35 @@ const Cal = {
     $('#calPrev').onclick = () => this.mover(-1);
     $('#calNext').onclick = () => this.mover(1);
     $('#calHoy').onclick = () => { this.fecha = new Date(); this.pintar(); if(this.modo==='anio') setTimeout(()=>{ const a=$('.mmes.actual'); a && a.scrollIntoView({behavior:'smooth',block:'center'}); },60); };
-    // Deslizar el dedo para pasar de hoja
-    const c = $('#calCuerpo'); let x0 = null, y0 = 0;
-    c.addEventListener('touchstart', e => { if(e.touches.length===1){ x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; } }, { passive:true });
-    c.addEventListener('touchend', e => {
-      if(x0 === null) return; const t = e.changedTouches[0], dx = t.clientX - x0, dy = t.clientY - y0; x0 = null;
-      if(Math.abs(dx) > 60 && Math.abs(dy) < 60) this.mover(dx < 0 ? 1 : -1);
-    }, { passive:true });
+    // Deslizar el dedo: la hoja se curva y sigue al dedo (como en la agenda de HOME)
+    const c = $('#calCuerpo'); let D = null;
+    c.addEventListener('pointerdown', e => {
+      if(this.pasando || e.button > 0) return;
+      D = { x:e.clientX, y:e.clientY, id:e.pointerId, ctx:null, lx:e.clientX, lt:performance.now(), v:0 };
+    });
+    c.addEventListener('pointermove', e => {
+      if(!D || e.pointerId !== D.id) return;
+      const dx = e.clientX - D.x, dy = e.clientY - D.y;
+      if(!D.ctx){
+        if(Math.abs(dx) < 10) return;
+        if(Math.abs(dy) > Math.abs(dx) * 0.8){ D = null; return; }     // es scroll hacia arriba/abajo
+        const dir = dx < 0 ? 1 : -1;
+        this.pasando = true; this.swipeAt = Date.now();
+        D.ctx = this.hojaEmpieza(dir); if(!D.ctx){ this.pasando = false; D = null; return; }
+        try{ c.setPointerCapture(e.pointerId); }catch(_){}
+      }
+      const now = performance.now(); D.v = (e.clientX - D.lx) / Math.max(1, now - D.lt); D.lx = e.clientX; D.lt = now;
+      D.ctx.render(Math.max(0, Math.min(1, (D.ctx.dir > 0 ? -dx : dx) / (D.ctx.W * 0.85))));
+    });
+    const fin = () => {
+      if(!D) return; const d = D; D = null; if(!d.ctx) return;
+      this.swipeAt = Date.now();
+      const golpe = (d.ctx.dir > 0 ? -d.v : d.v) > 0.6;
+      this.hojaA(d.ctx, (d.ctx.p > 0.45 || (golpe && d.ctx.p > 0.08)) ? 1 : 0, 650, () => { this.pasando = false; this.swipeAt = Date.now(); });
+    };
+    c.addEventListener('pointerup', fin); c.addEventListener('pointercancel', fin);
     c.addEventListener('click', e => {
+      if(this.swipeAt && Date.now() - this.swipeAt < 400) return;     // venía de pasar la hoja
       const b = e.target.closest('[data-t]'); if(b){ e.stopPropagation(); abrirEditor(b.dataset.t); return; }
       const nueva = e.target.closest('[data-nueva]'); if(nueva){ this.nuevaEn(nueva.dataset.nueva); return; }
       const d = e.target.closest('[data-d]'); if(d){ this.fecha = deIso(d.dataset.d); this.cambiarModo('dia'); return; }
@@ -28,14 +49,76 @@ const Cal = {
   abrir(){ $('#vTablero').classList.remove('activa'); $('#vCal').classList.add('activa'); $('#fab').style.display='none'; this.pintar(); },
   cerrar(){ $('#vCal').classList.remove('activa'); $('#vTablero').classList.add('activa'); $('#fab').style.display=''; pintarTodo(); },
   async cambiarModo(m){ this.modo = m; App.ajustes.calModo = m; guardarAjustes(); this.pintar(); },
-  mover(n){
+  cambio(n){
     const f = this.fecha;
-    if(this.modo === 'dia') f.setDate(f.getDate()+n);
+    if(this.modo === 'dia') this.fecha = new Date(f.getFullYear(), f.getMonth(), f.getDate()+n);
     else if(this.modo === 'mes') this.fecha = new Date(f.getFullYear(), f.getMonth()+n, 1);
     else this.fecha = new Date(f.getFullYear()+n, 0, 1);
-    const c = $('#calCuerpo'); c.classList.remove('pasa-izq','pasa-der'); void c.offsetWidth;
-    c.classList.add(n > 0 ? 'pasa-izq' : 'pasa-der');
     this.pintar();
+  },
+  // Botones ‹ ›: la hoja pasa sola
+  mover(n){
+    if(this.pasando) return;
+    if(matchMedia('(prefers-reduced-motion: reduce)').matches){ this.cambio(n); return; }
+    const ctx = this.hojaEmpieza(n);
+    if(ctx){ this.pasando = true; this.hojaA(ctx, 1, 850, () => { this.pasando = false; }); }
+  },
+
+  /* ---- Hoja que se curva al pasar (mismo efecto que el calendario de HOME) ---- */
+  hojaEmpieza(dir){
+    const cont = $('#calCuerpo');
+    const r = cont.getBoundingClientRect(), W = r.width, H = r.height;
+    if(W < 10 || H < 10){ this.cambio(dir); return null; }
+    const viejo = cont.cloneNode(true); viejo.removeAttribute('id');
+    const scroll = cont.scrollTop;
+    this.cambio(dir);                                  // debajo ya está la hoja nueva
+    const wrap = document.createElement('div'); wrap.className = 'curl-wrap';
+    Object.assign(wrap.style, { left:r.left+'px', top:r.top+'px', width:W+'px', height:H+'px' });
+    const old = document.createElement('div'); old.className = 'curl-old';
+    const raiz = getComputedStyle(document.documentElement);
+    old.style.background = `linear-gradient(180deg, ${raiz.getPropertyValue('--bg')}, ${raiz.getPropertyValue('--bg2')})`;
+    viejo.classList.remove('pasa-izq','pasa-der');
+    Object.assign(viejo.style, { position:'absolute', inset:'0', width:'100%', height:'100%', overflow:'hidden', margin:'0' });
+    old.appendChild(viejo);
+    const mk = cl => { const d = document.createElement('div'); d.className = cl; return d; };
+    const cast = mk('curl-strip'), oldShade = mk('curl-strip'), flap = mk('curl-strip'), rim = mk('curl-strip');
+    wrap.append(cast, old, oldShade, flap, rim); document.body.appendChild(wrap);
+    viejo.scrollTop = scroll;
+    const tone = raiz.getPropertyValue('--dark').trim() || '#3a3a3c';
+    const paper = `color-mix(in srgb, ${tone}, #fff 88%)`;
+    const X = x => dir > 0 ? x : W - x;
+    const strip = (node, x0, x1, w, side, bg, clip) => {
+      const sx0 = X(x0), sx1 = X(x1), sd = dir > 0 ? side : -side;
+      node.style.left = (sd < 0 ? sx0 - w : sx0) + 'px'; node.style.width = Math.max(0, w) + 'px';
+      node.style.transform = `skewX(${Math.atan((sx1 - sx0) / H) * 180 / Math.PI}deg)`;
+      node.style.background = bg(sd < 0 ? '90deg' : '270deg'); node.style.clipPath = clip ? clip(sd) : 'none';
+    };
+    const ctx = { dir, W, H, p:0, wrap, revert: () => this.cambio(-dir) };
+    ctx.render = p => {
+      ctx.p = p;
+      const tilt = Math.min(H, 700) * 0.24 * (0.35 + 0.65 * Math.sin(Math.PI * Math.min(1, p * 1.05))) * (p < .02 ? p / .02 : 1);
+      const fx = (W + tilt) * (1 - p) - tilt * p, top = fx + tilt, bot = fx - tilt;
+      const wT = Math.max(0, W - top) * 0.62, wB = Math.max(0, W - bot) * 0.62, wA = (wT + wB) / 2;
+      old.style.clipPath = `polygon(${X(0)}px 0,${X(top)}px 0,${X(bot)}px ${H}px,${X(0)}px ${H}px)`;
+      strip(flap, top, bot, wA, -1, deg => `linear-gradient(${deg}, color-mix(in srgb, ${paper}, ${tone} 38%) 0%, color-mix(in srgb, ${paper}, ${tone} 14%) 7%, ${paper} 22%, #ffffff 44%, ${paper} 62%, color-mix(in srgb, ${paper}, ${tone} 16%) 84%, color-mix(in srgb, ${paper}, ${tone} 34%) 100%)`,
+        sd => sd < 0 ? `polygon(${wA - wT}px 0,100% 0,100% 100%,${wA - wB}px 100%)` : `polygon(0 0,${wT}px 0,${wB}px 100%,0 100%)`);
+      strip(rim, top, bot, 3, -1, deg => `linear-gradient(${deg}, rgba(0,0,0,0), color-mix(in srgb, ${tone}, #000 8%))`);
+      strip(cast, top, bot, 46 * (0.4 + 0.6 * Math.sin(Math.PI * p)), 1, deg => `linear-gradient(${deg === '90deg' ? '270deg' : '90deg'}, rgba(0,0,0,0), rgba(30,30,40,.22))`);
+      const oT = top - wT, oB = bot - wB;
+      strip(oldShade, oT, oB, 22, -1, deg => `linear-gradient(${deg === '90deg' ? '270deg' : '90deg'}, rgba(30,30,40,.15), rgba(0,0,0,0))`);
+      oldShade.style.opacity = (oT < W * 0.98 && p > 0.01) ? 1 : 0;
+    };
+    ctx.render(0); return ctx;
+  },
+  hojaA(ctx, target, dur, hecho){
+    const from = ctx.p, t0 = performance.now(), d = Math.max(140, dur * Math.abs(target - from));
+    const ease = t => 1 - Math.pow(1 - t, 3);
+    const frame = now => {
+      const q = Math.min(1, (now - t0) / d); ctx.render(from + (target - from) * ease(q));
+      if(q < 1){ requestAnimationFrame(frame); return; }
+      ctx.wrap.remove(); if(target < 1) ctx.revert(); if(hecho) hecho();
+    };
+    requestAnimationFrame(frame);
   },
   async nuevaEn(dia){
     await abrirEditor(null);
@@ -123,7 +206,7 @@ const Cal = {
         celdas += `<span class="${ts.length?'c':''} ${s===hoy?'hoy':''}" style="${st}">${di}${ts.length ? `<i style="background:${bordeDe(ts[0].t)}"></i>` : ''}</span>`;
       }
       const act = ahora.getFullYear()===y && ahora.getMonth()===m;
-      html += `<div class="mmes ${act?'actual':''}" data-m="${y}-${m}"><h5>${MESES[m]} <small>${delMes.length ? delMes.length+' 📋' : ''}</small></h5><div class="mgrid">${celdas}</div></div>`;
+      html += `<div class="mmes ${act?'actual':''}" data-m="${y}-${m}"><h5><span>${MESES[m]} <em class="anio-de">${y}</em></span> <small>${delMes.length ? delMes.length+' 📋' : ''}</small></h5><div class="mgrid">${celdas}</div></div>`;
     }
     return html + '</div>';
   },

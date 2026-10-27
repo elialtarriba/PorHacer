@@ -10,9 +10,9 @@
 <meta name="theme-color" content="#eeeff1">
 <title>PorHacer</title>
 <link rel="icon" href="logo.png" type="image/png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="estilos.css?v=2">
+<link rel="stylesheet" href="estilos.css?v=3">
 </head>
 <body>
 
@@ -34,7 +34,7 @@
         <small id="hoyTxt"></small>
       </div>
       <div class="insignias">
-        <span class="ver" id="verTxt">V2</span>
+        <span class="ver" id="verTxt">V3</span>
         <button class="nube-estado off" id="nubeEstado" hidden title="Nube">☁︎</button>
       </div>
     </div>
@@ -128,10 +128,10 @@
 
         <div class="fila2">
           <label class="lbl">Fecha inicio
-            <input type="date" id="edIni">
+            <span class="fecha-campo"><input type="date" id="edIni"><span class="fecha-vacia">Sin fecha</span><button type="button" class="fecha-x" data-x="edIni" aria-label="Quitar fecha">✕</button></span>
           </label>
           <label class="lbl">Fecha fin
-            <input type="date" id="edFin">
+            <span class="fecha-campo"><input type="date" id="edFin"><span class="fecha-vacia">Sin fecha</span><button type="button" class="fecha-x" data-x="edFin" aria-label="Quitar fecha">✕</button></span>
           </label>
         </div>
         <div class="dur" id="edDur"></div>
@@ -253,17 +253,17 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="iconos.js?v=2"></script>
-<script src="temas.js?v=2"></script>
-<script src="db.js?v=2"></script>
-<script src="firebase-config.js?v=2"></script>
-<script src="nube.js?v=2"></script>
-<script src="fotos.js?v=2"></script>
-<script src="videos.js?v=2"></script>
-<script src="voz.js?v=2"></script>
-<script src="calendario.js?v=2"></script>
-<script src="ajustes.js?v=2"></script>
-<script src="copias.js?v=2"></script>
-<script src="app.js?v=2"></script>
+<script src="iconos.js?v=3"></script>
+<script src="temas.js?v=3"></script>
+<script src="db.js?v=3"></script>
+<script src="firebase-config.js?v=3"></script>
+<script src="nube.js?v=3"></script>
+<script src="fotos.js?v=3"></script>
+<script src="videos.js?v=3"></script>
+<script src="voz.js?v=3"></script>
+<script src="calendario.js?v=3"></script>
+<script src="ajustes.js?v=3"></script>
+<script src="copias.js?v=3"></script>
+<script src="app.js?v=3"></script>
 </body>
 </html>

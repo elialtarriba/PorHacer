@@ -4,7 +4,7 @@
    (en catalán: «coma», «punt», «punt i a part», «línia nova»). */
 
 const Voz = {
-  rec: null, activo: null, base: '', final: '',
+  activo: null,
   soportado(){ return !!(window.SpeechRecognition || window.webkitSpeechRecognition); },
 
   _limpiar(t, idioma){
@@ -16,8 +16,22 @@ const Voz = {
     return t.replace(/([.?!]\s+|\n)([a-záéíóúàèòïüç])/g, (m,p,l) => p + l.toUpperCase());
   },
 
+  // Para el micro. La pantalla se actualiza YA, sin esperar al navegador
+  // (en el iPhone, a veces el reconocimiento tarda o no avisa al terminar).
   parar(){
-    if(this.rec){ try{ this.rec.stop(); }catch(e){} }
+    const ses = this.activo; if(!ses) return;
+    this.activo = null;
+    ses.parado = true;
+    this._apagar(ses);
+    try{ ses.rec.stop(); }catch(e){}
+    // si en 1,5 s no ha terminado del todo, se corta
+    ses.corte = setTimeout(() => { try{ ses.rec.abort(); }catch(e){} }, 1500);
+  },
+  _apagar(ses){
+    ses.boton.classList.remove('oyendo');
+    if(ses.estado && ses.estado.dataset.de === ses.id) ses.estado.textContent = '';
+    const c = ses.campo; c.value = c.value.replace(/[ \t]+$/,'');
+    c.dispatchEvent(new Event('input', { bubbles:true }));
   },
 
   empezar(campo, boton, estado){
@@ -25,29 +39,30 @@ const Voz = {
       popAviso('Micrófono', 'Este navegador no permite dictar. En iPhone funciona en Safari; en Android, en Chrome.');
       return;
     }
+    // Si ya está escuchando: se para (y si era otro campo, se empieza en el nuevo)
     if(this.activo){ const mismo = this.activo.campo === campo; this.parar(); if(mismo) return; }
+
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     const idioma = (App.ajustes && App.ajustes.idiomaVoz) || 'es-ES';
     const r = new SR();
     r.lang = idioma; r.continuous = true; r.interimResults = true;
-    this.rec = r;
-    this.activo = { campo, boton };
-    this.base = campo.value;
-    if(this.base && !/\s$/.test(this.base)) this.base += ' ';
-    this.final = '';
+    let base = campo.value; if(base && !/\s$/.test(base)) base += ' ';
+    const ses = { id: String(Date.now()), rec:r, campo, boton, estado, base, final:'', parado:false };
+    this.activo = ses;
     boton.classList.add('oyendo');
-    if(estado) estado.textContent = '🎙️ Te escucho… pulsa otra vez el micro para parar';
+    if(estado){ estado.dataset.de = ses.id; estado.textContent = '🎙️ Te escucho… pulsa otra vez el micro para parar'; }
 
     r.onresult = ev => {
       let interino = '';
       for(let i = ev.resultIndex; i < ev.results.length; i++){
         const t = ev.results[i][0].transcript;
-        if(ev.results[i].isFinal) this.final += t + ' ';
+        if(ev.results[i].isFinal) ses.final += t + ' ';
         else interino += t;
       }
-      let texto = this._limpiar(this.final + interino, idioma).replace(/ +([,.?])/g,'$1');
-      if(!this.base.trim() && texto) texto = texto.charAt(0).toUpperCase() + texto.slice(1);
-      campo.value = this.base + texto;
+      // al parar, solo se guarda lo que ya es definitivo
+      let texto = this._limpiar(ses.final + (ses.parado ? '' : interino), idioma).replace(/ +([,.?])/g,'$1');
+      if(!ses.base.trim() && texto) texto = texto.charAt(0).toUpperCase() + texto.slice(1);
+      campo.value = ses.base + texto;
       campo.dispatchEvent(new Event('input', { bubbles:true }));
       if(campo.tagName === 'TEXTAREA') campo.scrollTop = campo.scrollHeight;
     };
@@ -56,12 +71,10 @@ const Voz = {
         popAviso('Micrófono', 'Hay que dar permiso al micrófono en el navegador para poder dictar.');
     };
     r.onend = () => {
-      boton.classList.remove('oyendo');
-      if(estado) estado.textContent = '';
-      campo.value = campo.value.replace(/\s+$/,'');
-      campo.dispatchEvent(new Event('input', { bubbles:true }));
-      this.activo = null; this.rec = null;
+      clearTimeout(ses.corte);
+      if(this.activo === ses) this.activo = null;     // terminó solo (silencio largo)
+      this._apagar(ses);
     };
-    try{ r.start(); }catch(e){ boton.classList.remove('oyendo'); }
+    try{ r.start(); }catch(e){ this.activo = null; this._apagar(ses); }
   }
 };

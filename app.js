@@ -1,6 +1,6 @@
 /* PorHacer · app principal: tablero de columnas, tareas y editor */
 
-const VERSION = 'V2';
+const VERSION = 'V3';
 const $ = (s, r=document) => r.querySelector(s);
 const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -357,7 +357,7 @@ async function abrirEditor(id, colId){
   let t;
   if(id){ t = structuredClone(limpiaTarea(App.tareas.find(x => x.id === id))); App.ed = { t, nueva:false, mediaNueva:false }; }
   else {
-    const primera = (colId && colDe(colId)) || columnas().find(c => c.visible && !c.hecha) || columnas()[0];
+    const primera = (colId && colDe(colId)) || columnas().find(c => c.id === 'curso') || columnas().find(c => c.visible && !c.hecha) || columnas()[0];
     t = { id:nuevoId('t'), titulo:'', notas:'', colId:primera.id, color:'', prio:0, ini:'', fin:'', personaId:'', email:false, subs:[], creada:Date.now(), orden:-Date.now() };
     App.ed = { t, nueva:true, mediaNueva:false };
   }
@@ -384,7 +384,10 @@ async function abrirEditor(id, colId){
   if(App.ed.nueva) setTimeout(() => $('#edTitulo').focus(), 300);
 }
 function pintarPunto(){ $('#edPunto').style.background = colDe($('#edCol').value).color; }
+// Las fechas vacías se ven como «Sin fecha» (Safari, si no, enseña la de hoy en gris)
+function marcarFechas(){ for(const id of ['edIni','edFin']){ const i = $('#'+id); i.parentNode.classList.toggle('vacia', !i.value); } }
 function pintarDur(){
+  marcarFechas();
   const a = $('#edIni').value, b = $('#edFin').value, el = $('#edDur');
   if(a && b){
     const n = difDias(a, b);
@@ -630,7 +633,8 @@ function eventos(){
   $$('#edPrio button').forEach(b => b.onclick = () => { $$('#edPrio button').forEach(x => x.classList.remove('on')); b.classList.add('on'); });
   $('#edCol').onchange = pintarPunto;
   $('#edIni').onchange = $('#edFin').onchange = pintarDur;
-  $('#edIni').addEventListener('change', () => { if($('#edIni').value && !$('#edFin').value) {} });
+  $$('#edIni, #edFin').forEach(i => i.addEventListener('input', pintarDur));
+  $$('.fecha-x').forEach(b => b.onclick = e => { e.preventDefault(); $('#'+b.dataset.x).value = ''; pintarDur(); });
   $('#edPersona').onchange = pintarEmail;
   $('#edNuevaPersona').onclick = async () => { const p = await formPersona(); if(p){ $('#edPersona').innerHTML = opcionesPersonas(p.id); pintarEmail(); if(p.email) $('#edEmail').checked = true; } };
   $('#edSubAdd').onclick = añadirSub;

@@ -181,7 +181,7 @@ input,select,textarea{-webkit-appearance:none;appearance:none}
   background:linear-gradient(180deg,var(--tile1),var(--tile2));border:1px solid rgba(0,0,0,.07);box-shadow:0 3px 0 rgba(0,0,0,.1)}
 .mic svg{width:28px;height:28px}
 .mic.grande{position:absolute;right:8px;bottom:12px}
-.mic.oyendo{background:var(--accent);animation:latido 1.2s infinite}
+.mic.oyendo{background:#22a55a;border-color:#1b8a4a;animation:latidoVerde 1.2s infinite}
 .mic.oyendo svg *{fill:#fff!important;stroke:#fff!important}
 
 .fila2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -419,3 +419,23 @@ body.ya .columna, body.ya .tarjeta{animation:none}
 .insignias{display:flex;flex-direction:column;align-items:center;gap:4px;flex:none;align-self:flex-start;margin-top:1px}
 .insignias .ver,.insignias .nube-estado{margin:0;align-self:auto}
 .marca{flex:1}
+
+/* V3 · hoja que se curva al pasar en el calendario (como en HOME) */
+.curl-wrap{position:fixed;z-index:150;overflow:hidden;pointer-events:none}
+.curl-old{position:absolute;inset:0}
+.curl-strip{position:absolute;top:0;height:100%;transform-origin:0 0;pointer-events:none;will-change:transform}
+.cal-cuerpo{user-select:none;-webkit-user-select:none}
+.mmes h5 .anio-de{font-style:normal;font-weight:800;font-size:11px;color:#fff;background:var(--accent);border-radius:6px;padding:1px 5px;margin-left:3px;vertical-align:1px}
+@keyframes latidoVerde{0%,100%{box-shadow:0 0 0 0 rgba(34,165,90,.5)}50%{box-shadow:0 0 0 10px rgba(34,165,90,0)}}
+.voz-estado{color:#1b8a4a}
+
+/* V3 · fechas: vacías se ven «Sin fecha», con ✕ para quitarlas */
+.fecha-campo{position:relative;display:block;margin-top:5px}
+.fecha-campo input[type=date]{display:block;width:100%;min-width:0;height:46px;margin:0;border-radius:13px;border:2px solid var(--line);background:var(--colbg);padding:0 34px 0 12px;font-size:16px;font-weight:700;color:var(--ink);outline:0;text-transform:none;letter-spacing:0}
+.fecha-campo input[type=date]:focus{border-color:var(--accent)}
+.fecha-vacia{display:none;position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:15px;font-weight:700;color:var(--ink2);pointer-events:none;text-transform:none;letter-spacing:0}
+.fecha-campo.vacia .fecha-vacia{display:block}
+.fecha-campo.vacia input[type=date]{color:transparent}
+.fecha-campo.vacia input[type=date]::-webkit-datetime-edit{color:transparent}
+.fecha-x{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:26px;height:26px;border-radius:50%;background:var(--line);color:var(--ink2);font-size:11px;font-weight:900}
+.fecha-campo.vacia .fecha-x{display:none}

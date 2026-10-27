@@ -1,10 +1,10 @@
 // PorHacer · service worker: la app funciona sin conexión
-const CACHE = 'porhacer-v2c';
+const CACHE = 'porhacer-v3';
 const ARCHIVOS = [
-  './', './index.html', './manifest.json', './estilos.css?v=2',
-  './iconos.js?v=2', './temas.js?v=2', './db.js?v=2', './firebase-config.js?v=2', './nube.js?v=2',
-  './fotos.js?v=2', './videos.js?v=2', './voz.js?v=2', './calendario.js?v=2', './ajustes.js?v=2',
-  './copias.js?v=2', './app.js?v=2',
+  './', './index.html', './manifest.json', './estilos.css?v=3',
+  './iconos.js?v=3', './temas.js?v=3', './db.js?v=3', './firebase-config.js?v=3', './nube.js?v=3',
+  './fotos.js?v=3', './videos.js?v=3', './voz.js?v=3', './calendario.js?v=3', './ajustes.js?v=3',
+  './copias.js?v=3', './app.js?v=3',
   './logo.png', './icon-192.png', './icon-512.png', './apple-touch-icon.png'
 ];
 // Librería de Firebase: también se guarda para poder abrir la app sin internet
