@@ -536,3 +536,8 @@ body.ya .columna, body.ya .tarjeta{animation:none}
 .gente-fila.abierta .gente-mas{display:block;animation:aparecer .2s}
 .gente-mas p{margin:2px 0}
 .gente-acc{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+
+/* Mover la tarea a otro tablero */
+.ed-tablero{margin-top:14px;padding:10px 12px 12px;border-radius:15px;background:var(--colbg);border:1.5px solid var(--line)}
+.ed-tablero .lbl{margin-top:0}
+.ed-tablero[hidden]{display:none}

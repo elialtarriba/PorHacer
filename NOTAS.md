@@ -83,3 +83,10 @@ Probó la V3 con su marido (rbielsa@gmail.com). Ella le había puesto en Persona
 - **Redondas con iniciales**: si la tarea se comparte con más gente, sale la redonda de la persona asignada y un «+N». Al pulsarla sale una ventana con las redondas y la lista de personas del tablero; al pulsar una persona se despliega: email, tareas pendientes, «📌 Asignarle esta tarea», «👀 Ver sus tareas» y «🔔 Recordatorio». → Hecho.
 - **Emails**: le va bien como hasta ahora (se abre el correo ya escrito y ella pulsa Enviar). EmailJS no hace falta; queda opcional.
 - Su usuario de Firebase sirve: no hay que crearlo de nuevo (la V4 solo le pide nombre y apellidos una vez).
+
+## 2026-10-27 · V4.1
+- **V4.1** · Al final de cada tarea, después de «Al calendario del móvil / Duplicar / Borrar» y antes del historial, un **desplegable con los tableros** para mover la tarea a otro tablero (con sus fotos, vídeos y audios; la persona asignada se apunta sola en el otro tablero; si la columna no existe allí, va a su primera columna). Hecho en la V4 (carpeta PorHacer) y en la V5 (PorHacer2).
+- Le encantan las notas de voz («¡eres un máquina!»).
+
+## V4.2 · Recuperar contraseña
+- Raimon no recibía el email de «He olvidado la contraseña». Ahora el email sale en español, vuelve a la app y el aviso explica: mirar Spam/Promociones, remitente noreply@porhacer-36f11.firebaseapp.com y que debe ser el mismo email de la cuenta (Firebase no avisa si el email no existe).

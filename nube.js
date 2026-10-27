@@ -54,6 +54,7 @@ const Nube = {
     }catch(e){ console.warn(e); this.pintarEstado('⚠️'); return; }
     firebase.initializeApp(FIREBASE_CONFIG);
     this.auth = firebase.auth();
+    try{ this.auth.languageCode = 'es'; }catch(e){}
     this.db = firebase.firestore();
     try{ await this.db.enablePersistence({ synchronizeTabs:true }); }catch(e){}
     if(location.hostname === 'localhost' && location.search.includes('emu=1')){
@@ -286,6 +287,41 @@ const Nube = {
     for(const v of vs) await this.subirMedia('videos', v);
     for(const x of as) await this.subirMedia('audios', x);
     toast('✅ Todo subido a la nube');
+  },
+
+  /* ---------- Mover una tarea a otro tablero (con fotos, vídeos y audios) ---------- */
+  async moverTarea(t, destino){
+    if(!this.activa || destino === this.tid) return;
+    const origen = this.tid, D = n => this.colDe(destino, n);
+    toast('📋 Moviendo…', null, null, 15000);
+    // 1. la columna: si en el otro tablero no existe, va a su primera columna sin acabar
+    let cols = COLUMNAS_INICIO;
+    try{ const c = await D('config').doc('tablero').get(); if(c.exists && c.data().columnas) cols = c.data().columnas; }catch(e){}
+    const nueva = limpioFS(limpiaTarea(t));
+    if(!cols.some(c => c.id === nueva.colId)) nueva.colId = (cols.find(c => !c.hecha) || cols[0]).id;
+    delete nueva.colPrev;
+    // 2. la persona asignada: se busca por email en el otro tablero (o se apunta)
+    const p = persona(t.personaId);
+    if(p){
+      let pid = '';
+      if(p.email){ const ya = await D('personas').where('email', '==', p.email.toLowerCase()).get(); if(ya.docs.length) pid = ya.docs[0].id; }
+      if(!pid){ pid = nuevoId('p'); await D('personas').doc(pid).set(limpioFS({ ...p, id:pid, email:(p.email||'').toLowerCase() })); }
+      nueva.personaId = pid;
+    }
+    // 3. fotos, vídeos y audios (con sus trozos)
+    const medias = this.media.filter(m => m.tareaId === t.id);
+    for(const m of medias){
+      const trozos = await this.col('trozos').where('mid', '==', m.id).get();
+      for(const d of trozos.docs) await D('trozos').doc(d.id).set(d.data());
+      await D('media').doc(m.id).set(m);
+    }
+    // 4. la tarea en el tablero nuevo, y fuera del de ahora
+    nueva.actualizada = Date.now(); nueva.orden = -Date.now();
+    await D('tareas').doc(nueva.id).set(nueva);
+    for(const m of medias){ await this.borrarMedia(m.id); for(const a of TIPOS_MEDIA) await _orig.borrar(a, m.id).catch(()=>{}); }
+    await this.col('tareas').doc(t.id).delete();
+    await _orig.borrar('tareas', t.id);
+    $('#toast').classList.remove('ver');
   },
 
   /* ---------- Compartir un tablero ---------- */
@@ -525,7 +561,16 @@ const Nube = {
       $('#nbOtro', c).onclick = () => this.pantallaEntrar(reg ? 'entrar' : 'registro');
       if(!reg) $('#nbOlvido', c).onclick = async () => {
         const m = $('#nbMail', c).value.trim(); if(!m){ err('Escribe primero tu email.'); return; }
-        try{ await this.auth.sendPasswordResetEmail(m); err(''); popAviso('Revisa tu correo', 'Te hemos enviado un email a '+m+' para poner una contraseña nueva.'); }catch(e){ err(this.textoError(e)); }
+        const vuelta = { url: location.origin + location.pathname };
+        try{
+          try{ await this.auth.sendPasswordResetEmail(m, vuelta); }
+          catch(e1){ if(/continue-uri|unauthorized-domain|invalid-continue/.test(e1.code||'')) await this.auth.sendPasswordResetEmail(m); else throw e1; }
+          err('');
+          popup({ tit:'📧 Revisa tu correo', html:`<p>Si hay una cuenta de PorHacer con <b>${esc(m)}</b>, te llegará un email para poner una contraseña nueva.</p>
+            <p style="margin-top:8px">• Mira también en <b>Spam / Correo no deseado</b> y en <b>Promociones</b>.<br>• Lo envía <b>noreply@porhacer-36f11.firebaseapp.com</b>.<br>• Puede tardar unos minutos.</p>
+            <p style="margin-top:8px">Si no llega, revisa que el email esté bien escrito: tiene que ser <b>el mismo con el que creaste la cuenta</b>.</p>`,
+            botones:[{ txt:'Entendido', cls:'btn-pri', val:true }] });
+        }catch(e){ err(this.textoError(e)); }
       };
       $('#nbPass', c).onkeydown = e => { if(e.key === 'Enter' && !reg) $('#nbOk', c).click(); };
       $('#nbOk', c).onclick = async () => {

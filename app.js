@@ -1,6 +1,6 @@
 /* PorHacer · app principal: tablero de columnas, tareas y editor */
 
-const VERSION = 'V4';
+const VERSION = 'V4.2';
 const $ = (s, r=document) => r.querySelector(s);
 const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -437,6 +437,7 @@ async function abrirEditor(id, colId){
     if(t.recordado) m.push('🔔 Último recordatorio: '+new Date(t.recordado).toLocaleString('es-ES',{dateStyle:'medium',timeStyle:'short'}));
   }
   $('#edMeta').innerHTML = m.join('<br>');
+  pintarTableroTarea();
   $('#edBorrar').style.display = $('#edDup').style.display = App.ed.nueva ? 'none' : '';
   await contarEditor();
   tabEditor('tarea');
@@ -633,6 +634,32 @@ async function duplicarTarea(){
   toast('⧉ Duplicada', 'Abrir', () => abrirEditor(c.id));
 }
 
+/* Mover la tarea a otro tablero (desplegable al final de la tarea) */
+function pintarTableroTarea(){
+  const fila = $('#edTabFila'), sel = $('#edTablero');
+  const lista = (typeof Nube !== 'undefined' && Nube.activa) ? [...Nube.misTableros(), ...Nube.compartidos()] : [];
+  fila.hidden = !App.ed || App.ed.nueva || lista.length < 2;
+  if(fila.hidden) return;
+  sel.innerHTML = lista.map(t => `<option value="${t.id}" ${t.id === Nube.tid ? 'selected' : ''}>📋 ${esc(Nube.nombreTablero(t))}${Nube.esDueno(t) ? '' : ' (de ' + esc((t.duenoNombre || t.duenoEmail || '').split(' ')[0]) + ')'}</option>`).join('');
+}
+async function cambiarTableroTarea(){
+  const sel = $('#edTablero'), destino = sel.value;
+  if(!App.ed || destino === Nube.tid) return;
+  const t = leerEditor(), nom = Nube.nombreTablero(Nube.tableros[destino]);
+  if(!t.titulo){ sel.value = Nube.tid; $('#edTitulo').focus(); toast('✏️ Escribe antes qué hay que hacer'); return; }
+  const ok = await popConfirmar('¿Mover al tablero «' + nom + '»?', '«' + t.titulo + '» se moverá con sus fotos, vídeos y audios. Dejará de estar en este tablero y la verán las personas de «' + nom + '».', 'Mover');
+  if(!ok){ sel.value = Nube.tid; return; }
+  sel.disabled = true;
+  try{
+    await Nube.moverTarea(t, destino);
+    Voz.parar(); cerrar('editor'); soltarUrls(); App.ed = null;
+    App.tareas = App.tareas.filter(x => x.id !== t.id);
+    await contarMedia(); pintarTodo();
+    toast('📋 Movida a «' + nom + '»', 'Ir', () => Nube.conectar(destino), 6000);
+  }catch(e){ console.warn(e); popAviso('No se pudo mover', Nube.textoError(e)); sel.value = Nube.tid; }
+  sel.disabled = false;
+}
+
 /* Recordatorio por email (se puede enviar las veces que haga falta) */
 async function enviarRecordatorio(){
   const t = leerEditor(), p = persona(t.personaId);
@@ -730,6 +757,7 @@ function eventos(){
   $('#edDup').onclick = duplicarTarea;
   $('#edIcs').onclick = exportarIcs;
   $('#edRecordar').onclick = enviarRecordatorio;
+  $('#edTablero').onchange = cambiarTableroTarea;
   $('#edHoy').onclick = () => { const h = hoyIso(); $('#edIni').value = h; $('#edFin').value = h; pintarDur(); toast('☀️ Fecha: hoy'); };
   $('#btnGrabarAudio').onclick = async () => { if(await Audios.grabar(App.ed.t.id)){ App.ed.mediaNueva = true; pintarAudios(); contarMedia().then(pintarTodo); } };
   $('#btnTablero').onclick = () => Nube.elegirTablero();
