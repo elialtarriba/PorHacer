@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function conEmail() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+    function miEmail() {
+      return request.auth.token.email.lower();
+    }
+    function esMiembro(t) {
+      let tab = get(/databases/$(database)/documents/tableros/$(t)).data;
+      return conEmail() && (tab.dueno == request.auth.uid || miEmail() in tab.miembros);
+    }
+    match /tableros/{t} {
+      allow get, list: if conEmail() && (resource.data.dueno == request.auth.uid || miEmail() in resource.data.miembros);
+      allow create: if conEmail() && request.resource.data.dueno == request.auth.uid;
+      allow update: if conEmail() && resource.data.dueno == request.auth.uid
+                    && request.resource.data.dueno == resource.data.dueno;
+      allow delete: if false;
+      match /{coleccion}/{doc} {
+        allow read, write: if esMiembro(t);
+      }
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "PorHacer",
+  "short_name": "PorHacer",
+  "description": "Tus tareas por columnas, con calendario, fotos y vídeos",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#eeeff1",
+  "theme_color": "#eeeff1",
+  "scope": "./",
+  "orientation": "any",
+  "icons": [
+    { "src": "img/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "img/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "img/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

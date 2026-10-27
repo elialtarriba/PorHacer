@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PorHacer">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#eeeff1">
+<title>PorHacer</title>
+<link rel="icon" href="img/logo.png" type="image/png">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png?v=2">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="css/estilos.css?v=2">
+</head>
+<body>
+
+<!-- PANTALLA DE ENTRADA -->
+<div id="splash">
+  <img src="img/logo.png" alt="" class="splash-logo">
+  <div class="splash-title">Por<span>Hacer</span></div>
+  <div class="splash-sub">Tus tareas, en orden y bonitas</div>
+  <div class="splash-bar"><i></i></div>
+</div>
+
+<!-- ============ TABLERO ============ -->
+<section id="vTablero" class="vista activa">
+  <header class="top">
+    <div class="marca">
+      <img src="img/logo.png" alt="" class="marca-logo">
+      <div class="marca-txt">
+        <h1>Por<span>Hacer</span></h1>
+        <small id="hoyTxt"></small>
+      </div>
+      <div class="insignias">
+        <span class="ver" id="verTxt">V2</span>
+        <button class="nube-estado off" id="nubeEstado" hidden title="Nube">☁︎</button>
+      </div>
+    </div>
+    <div class="top-btns">
+      <button class="ibtn" id="btnCal" title="Calendario" aria-label="Calendario"></button>
+      <button class="ibtn" id="btnAjustes" title="Configuración" aria-label="Configuración"></button>
+    </div>
+  </header>
+
+  <div class="barra">
+    <div class="buscar">
+      <span class="buscar-ico" id="icoBuscar"></span>
+      <input id="q" type="search" placeholder="Buscar tareas, personas, notas…" autocomplete="off" enterkeyhint="search">
+      <button class="q-x" id="qx" aria-label="Borrar búsqueda">✕</button>
+    </div>
+    <button class="filtro-btn" id="btnFiltro" aria-label="Filtrar"><span id="filtroTxt">Todas</span> ▾</button>
+  </div>
+
+  <div class="chips" id="chipsCols" aria-label="Columnas visibles"></div>
+
+  <main class="tablero" id="tablero"></main>
+
+  <button class="fab" id="fab" aria-label="Nueva tarea"><span>＋</span> Nueva tarea</button>
+</section>
+
+<!-- ============ CALENDARIO ============ -->
+<section id="vCal" class="vista">
+  <header class="top cal-top">
+    <button class="ibtn" id="btnVolver" title="Volver a las tareas" aria-label="Volver a las tareas"></button>
+    <div class="cal-tit">
+      <h2 id="calTit"></h2>
+      <small id="calSub"></small>
+    </div>
+    <button class="ibtn" id="btnAjustes2" title="Configuración" aria-label="Configuración"></button>
+  </header>
+  <div class="cal-ctrl">
+    <button class="flecha" id="calPrev" aria-label="Anterior">‹</button>
+    <div class="seg" id="calModo">
+      <button data-m="dia">Día</button><button data-m="mes" class="on">Mes</button><button data-m="anio">Año</button>
+    </div>
+    <button class="flecha" id="calNext" aria-label="Siguiente">›</button>
+    <button class="hoy-btn" id="calHoy">Hoy</button>
+  </div>
+  <div class="cal-cuerpo" id="calCuerpo"></div>
+  <div class="cal-sinfecha" id="calSinFecha"></div>
+</section>
+
+<!-- ============ EDITOR DE TAREA ============ -->
+<div class="velo" id="editor">
+  <div class="hoja hoja-editor">
+    <div class="hoja-cab">
+      <span class="punto-col" id="edPunto"></span>
+      <b id="edCab">Nueva tarea</b>
+      <button class="cerrar" data-cerrar="editor" aria-label="Cerrar">✕</button>
+    </div>
+
+    <div class="campo-tit">
+      <input id="edTitulo" maxlength="140" placeholder="¿Qué hay que hacer?">
+      <button class="mic" data-mic="edTitulo" aria-label="Dictar título"></button>
+    </div>
+
+    <div class="tabs" id="edTabs">
+      <button data-t="tarea" class="on">📝 Tarea</button>
+      <button data-t="fotos">📷 Fotos <i id="nFotos"></i></button>
+      <button data-t="videos">🎬 Vídeos <i id="nVideos"></i></button>
+    </div>
+
+    <div class="hoja-scroll">
+      <!-- Pestaña tarea -->
+      <div class="tab-pan on" data-p="tarea">
+        <div class="campo-nota">
+          <textarea id="edNotas" rows="4" placeholder="Notas… (pulsa el micro y habla)"></textarea>
+          <button class="mic grande" data-mic="edNotas" aria-label="Dictar nota"></button>
+        </div>
+        <div class="voz-estado" id="vozEstado"></div>
+
+        <div class="fila2">
+          <label class="lbl">Columna
+            <select id="edCol"></select>
+          </label>
+          <label class="lbl">Color de la tarea
+            <div class="sel-color" id="edColor"></div>
+          </label>
+        </div>
+
+        <div class="lbl">Prioridad
+          <div class="seg seg-prio" id="edPrio">
+            <button data-p="0" class="on">Ninguna</button><button data-p="1">Baja</button><button data-p="2">Media</button><button data-p="3">Alta</button>
+          </div>
+        </div>
+
+        <div class="fila2">
+          <label class="lbl">Fecha inicio
+            <input type="date" id="edIni">
+          </label>
+          <label class="lbl">Fecha fin
+            <input type="date" id="edFin">
+          </label>
+        </div>
+        <div class="dur" id="edDur"></div>
+
+        <div class="lbl">Asignada a
+          <div class="fila-persona">
+            <select id="edPersona"></select>
+            <button class="mini-btn" id="edNuevaPersona">＋ Persona</button>
+          </div>
+        </div>
+        <label class="check" id="edEmailFila">
+          <input type="checkbox" id="edEmail">
+          <span class="caja"></span>
+          <span>Enviar la tarea por email al guardar <small id="edEmailInfo"></small></span>
+        </label>
+
+        <div class="lbl">Pasos <small class="gris" id="edSubInfo"></small>
+          <div class="barra-prog"><i id="edProg"></i></div>
+          <ul class="subtareas" id="edSubs"></ul>
+          <div class="nuevo-paso">
+            <input id="edSubNuevo" placeholder="Añadir un paso…" enterkeyhint="done">
+            <button class="mini-btn" id="edSubAdd">＋</button>
+          </div>
+        </div>
+
+        <div class="ed-extra">
+          <button class="mini-btn" id="edIcs">📅 Al calendario del móvil</button>
+          <button class="mini-btn" id="edDup">⧉ Duplicar</button>
+          <button class="mini-btn peligro" id="edBorrar">🗑 Borrar</button>
+        </div>
+        <div class="ed-fechas" id="edMeta"></div>
+      </div>
+
+      <!-- Pestaña fotos -->
+      <div class="tab-pan" data-p="fotos">
+        <div class="media-btns">
+          <label class="media-add"><input type="file" accept="image/*" capture="environment" id="inCam" hidden>📸 Hacer foto</label>
+          <label class="media-add"><input type="file" accept="image/*" multiple id="inFotos" hidden>🖼️ Elegir fotos</label>
+        </div>
+        <div class="media-info" id="fotosInfo">Las fotos se aligeran solas antes de guardarse.</div>
+        <div class="galeria" id="galFotos"></div>
+      </div>
+
+      <!-- Pestaña vídeos -->
+      <div class="tab-pan" data-p="videos">
+        <div class="media-btns">
+          <label class="media-add"><input type="file" accept="video/*" capture="environment" id="inGrabar" hidden>🎥 Grabar vídeo</label>
+          <label class="media-add"><input type="file" accept="video/*" id="inVideos" hidden>🎞️ Elegir vídeo</label>
+        </div>
+        <div class="media-info" id="videosInfo">Los vídeos se aligeran (tamaño y calidad) antes de guardarse.</div>
+        <div class="progreso" id="vidProg" hidden>
+          <div class="progreso-txt" id="vidProgTxt">Aligerando vídeo…</div>
+          <div class="barra-prog"><i id="vidProgBar"></i></div>
+          <button class="mini-btn" id="vidCancelar">Cancelar</button>
+        </div>
+        <div class="galeria videos" id="galVideos"></div>
+      </div>
+    </div>
+
+    <div class="hoja-pie">
+      <button class="btn-sec" data-cerrar="editor">Cancelar</button>
+      <button class="btn-pri" id="edGuardar">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CONFIGURACIÓN ============ -->
+<div class="velo" id="ajustes">
+  <div class="hoja hoja-ajustes">
+    <div class="hoja-cab">
+      <span class="cab-ico" id="icoAjCab"></span>
+      <b>Configuración</b>
+      <button class="cerrar" data-cerrar="ajustes" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="tabs tabs-scroll" id="ajTabs">
+      <button data-t="temas" class="on">🎨 Temas</button>
+      <button data-t="colores">🖌️ Colores</button>
+      <button data-t="columnas">🗂️ Columnas</button>
+      <button data-t="personas">👥 Personas</button>
+      <button data-t="copias">💾 Copias</button>
+      <button data-t="nube">☁️ Nube</button>
+      <button data-t="mas">⚙️ Más</button>
+    </div>
+    <div class="hoja-scroll">
+      <div class="tab-pan on" data-p="temas"><div class="temas" id="ajTemas"></div></div>
+      <div class="tab-pan" data-p="colores"><div id="ajColores"></div></div>
+      <div class="tab-pan" data-p="columnas"><div id="ajColumnas"></div></div>
+      <div class="tab-pan" data-p="personas"><div id="ajPersonas"></div></div>
+      <div class="tab-pan" data-p="copias"><div id="ajCopias"></div></div>
+      <div class="tab-pan" data-p="nube"><div id="ajNube"></div></div>
+      <div class="tab-pan" data-p="mas"><div id="ajMas"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ VISOR DE FOTOS / VÍDEOS ============ -->
+<div class="visor" id="visor">
+  <button class="visor-x" id="visorX" aria-label="Cerrar">✕</button>
+  <div class="visor-cont" id="visorCont"></div>
+  <div class="visor-pie">
+    <span id="visorInfo"></span>
+    <button class="mini-btn peligro" id="visorBorrar">🗑 Borrar</button>
+  </div>
+</div>
+
+<!-- ============ POPUP GENÉRICO ============ -->
+<div class="velo" id="popup">
+  <div class="hoja hoja-pop">
+    <div class="pop-tit" id="popTit"></div>
+    <div class="pop-cuerpo" id="popCuerpo"></div>
+    <div class="pop-btns" id="popBtns"></div>
+  </div>
+</div>
+
+<!-- ============ ENTRAR EN LA NUBE ============ -->
+<div class="velo velo-nube" id="nube">
+  <div class="hoja hoja-nube"><div class="hoja-scroll" id="nubeCuerpo"></div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/iconos.js?v=2"></script>
+<script src="js/temas.js?v=2"></script>
+<script src="js/db.js?v=2"></script>
+<script src="js/firebase-config.js?v=2"></script>
+<script src="js/nube.js?v=2"></script>
+<script src="js/fotos.js?v=2"></script>
+<script src="js/videos.js?v=2"></script>
+<script src="js/voz.js?v=2"></script>
+<script src="js/calendario.js?v=2"></script>
+<script src="js/ajustes.js?v=2"></script>
+<script src="js/copias.js?v=2"></script>
+<script src="js/app.js?v=2"></script>
+</body>
+</html>

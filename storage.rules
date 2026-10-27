@@ -1,0 +1,16 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /tableros/{t}/{todo=**} {
+      function tab() {
+        return firestore.get(/databases/(default)/documents/tableros/$(t)).data;
+      }
+      function puede() {
+        return request.auth != null && request.auth.token.email_verified == true
+          && (tab().dueno == request.auth.uid || request.auth.token.email.lower() in tab().miembros);
+      }
+      allow read, delete: if puede();
+      allow create, update: if puede() && request.resource.size < 300 * 1024 * 1024;
+    }
+  }
+}
