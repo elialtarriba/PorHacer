@@ -10,9 +10,9 @@
 <meta name="theme-color" content="#eeeff1">
 <title>PorHacer</title>
 <link rel="icon" href="logo.png" type="image/png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=4">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="estilos.css?v=3">
+<link rel="stylesheet" href="estilos.css?v=4">
 </head>
 <body>
 
@@ -32,9 +32,10 @@
       <div class="marca-txt">
         <h1>Por<span>Hacer</span></h1>
         <small id="hoyTxt"></small>
+        <button class="tab-pill" id="btnTablero" hidden></button>
       </div>
       <div class="insignias">
-        <span class="ver" id="verTxt">V3</span>
+        <span class="ver" id="verTxt">V4</span>
         <button class="nube-estado off" id="nubeEstado" hidden title="Nube">☁︎</button>
       </div>
     </div>
@@ -100,6 +101,7 @@
       <button data-t="tarea" class="on">📝 Tarea</button>
       <button data-t="fotos">📷 Fotos <i id="nFotos"></i></button>
       <button data-t="videos">🎬 Vídeos <i id="nVideos"></i></button>
+      <button data-t="audios">🎙️ Audio <i id="nAudios"></i></button>
     </div>
 
     <div class="hoja-scroll">
@@ -126,13 +128,14 @@
           </div>
         </div>
 
-        <div class="fila2">
+        <div class="fila-fechas">
           <label class="lbl">Fecha inicio
             <span class="fecha-campo"><input type="date" id="edIni"><span class="fecha-vacia">Sin fecha</span><button type="button" class="fecha-x" data-x="edIni" aria-label="Quitar fecha">✕</button></span>
           </label>
           <label class="lbl">Fecha fin
             <span class="fecha-campo"><input type="date" id="edFin"><span class="fecha-vacia">Sin fecha</span><button type="button" class="fecha-x" data-x="edFin" aria-label="Quitar fecha">✕</button></span>
           </label>
+          <button type="button" class="hoy-fecha" id="edHoy" title="Poner la fecha de hoy">☀️<br>Hoy</button>
         </div>
         <div class="dur" id="edDur"></div>
 
@@ -147,6 +150,7 @@
           <span class="caja"></span>
           <span>Enviar la tarea por email al guardar <small id="edEmailInfo"></small></span>
         </label>
+        <button type="button" class="mini-btn recordar" id="edRecordar">🔔 Enviar un recordatorio por email</button>
 
         <div class="lbl">Pasos <small class="gris" id="edSubInfo"></small>
           <div class="barra-prog"><i id="edProg"></i></div>
@@ -189,6 +193,15 @@
         </div>
         <div class="galeria videos" id="galVideos"></div>
       </div>
+
+      <!-- Pestaña audios -->
+      <div class="tab-pan" data-p="audios">
+        <div class="media-btns">
+          <button type="button" class="media-add" id="btnGrabarAudio">🎙️ Grabar nota de audio</button>
+        </div>
+        <div class="media-info" id="audiosInfo">Graba una nota de voz: la escuchas y decides si la guardas.</div>
+        <div class="lista-audios" id="listaAudios"></div>
+      </div>
     </div>
 
     <div class="hoja-pie">
@@ -207,12 +220,13 @@
       <button class="cerrar" data-cerrar="ajustes" aria-label="Cerrar">✕</button>
     </div>
     <div class="tabs tabs-scroll" id="ajTabs">
+      <button data-t="tableros">📋 Tableros</button>
       <button data-t="temas" class="on">🎨 Temas</button>
       <button data-t="colores">🖌️ Colores</button>
       <button data-t="columnas">🗂️ Columnas</button>
       <button data-t="personas">👥 Personas</button>
+      <button data-t="fiesta">🎉 Al acabar</button>
       <button data-t="copias">💾 Copias</button>
-      <button data-t="nube">☁️ Nube</button>
       <button data-t="mas">⚙️ Más</button>
     </div>
     <div class="hoja-scroll">
@@ -221,7 +235,8 @@
       <div class="tab-pan" data-p="columnas"><div id="ajColumnas"></div></div>
       <div class="tab-pan" data-p="personas"><div id="ajPersonas"></div></div>
       <div class="tab-pan" data-p="copias"><div id="ajCopias"></div></div>
-      <div class="tab-pan" data-p="nube"><div id="ajNube"></div></div>
+      <div class="tab-pan" data-p="tableros"><div id="ajNube"></div></div>
+      <div class="tab-pan" data-p="fiesta"><div id="ajFiesta"></div></div>
       <div class="tab-pan" data-p="mas"><div id="ajMas"></div></div>
     </div>
   </div>
@@ -251,19 +266,26 @@
   <div class="hoja hoja-nube"><div class="hoja-scroll" id="nubeCuerpo"></div></div>
 </div>
 
+<canvas id="confeti" aria-hidden="true"></canvas>
+<div class="fiesta-msg" id="fiestaMsg" aria-live="polite"></div>
+
 <div class="toast" id="toast"></div>
 
-<script src="iconos.js?v=3"></script>
-<script src="temas.js?v=3"></script>
-<script src="db.js?v=3"></script>
-<script src="firebase-config.js?v=3"></script>
-<script src="nube.js?v=3"></script>
-<script src="fotos.js?v=3"></script>
-<script src="videos.js?v=3"></script>
-<script src="voz.js?v=3"></script>
-<script src="calendario.js?v=3"></script>
-<script src="ajustes.js?v=3"></script>
-<script src="copias.js?v=3"></script>
-<script src="app.js?v=3"></script>
+<script src="iconos.js?v=4"></script>
+<script src="temas.js?v=4"></script>
+<script src="db.js?v=4"></script>
+<script src="firebase-config.js?v=4"></script>
+<script src="email-config.js?v=4"></script>
+<script src="correo.js?v=4"></script>
+<script src="audio.js?v=4"></script>
+<script src="fiesta.js?v=4"></script>
+<script src="nube.js?v=4"></script>
+<script src="fotos.js?v=4"></script>
+<script src="videos.js?v=4"></script>
+<script src="voz.js?v=4"></script>
+<script src="calendario.js?v=4"></script>
+<script src="ajustes.js?v=4"></script>
+<script src="copias.js?v=4"></script>
+<script src="app.js?v=4"></script>
 </body>
 </html>

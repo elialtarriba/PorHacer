@@ -10,7 +10,7 @@ const Ajustes = {
     $$('#ajTabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
     $$('#ajustes .tab-pan').forEach(p => p.classList.toggle('on', p.dataset.p === t));
     $('#ajustes .hoja-scroll').scrollTop = 0;
-    ({ temas:()=>this.temas(), colores:()=>this.colores(), columnas:()=>this.columnas(), personas:()=>this.personas(), copias:()=>Copias.pintar(), nube:()=>Nube.pintarAjustes($('#ajNube')), mas:()=>this.mas() })[t]();
+    ({ temas:()=>this.temas(), colores:()=>this.colores(), columnas:()=>this.columnas(), personas:()=>this.personas(), copias:()=>Copias.pintar(), tableros:()=>Nube.pintarTableros($('#ajNube')), fiesta:()=>this.fiesta(), mas:()=>this.mas() })[t]();
   },
   async guardar(){ await guardarAjustes(); },
 
@@ -107,20 +107,53 @@ const Ajustes = {
   personas(){
     const cont = $('#ajPersonas');
     const l = App.personas.slice().sort((a,b) => nombreP(a).localeCompare(nombreP(b)));
-    cont.innerHTML = `<div class="aj-sec"><h4>Personas para asignar tareas</h4><p class="aj-ayuda">Al asignar una tarea a alguien con email, puedes marcar «Enviar por email» y se abrirá tu correo con la tarea ya escrita.</p>
+    const tb = (typeof Nube !== 'undefined' && Nube.activa) ? Nube.tablero : null;
+    const acceso = p => { if(!tb || !p.email) return ''; const em = p.email.toLowerCase();
+      if(em === tb.duenoEmail || Nube.aceptados(tb).includes(em)) return ' · ✅ en el tablero';
+      if((tb.miembros||[]).includes(em)) return ' · ⏳ invitada'; return ' · sin acceso'; };
+    const puedeInvitar = p => tb && Nube.esDueno(tb) && p.email && !(tb.miembros||[]).includes(p.email.toLowerCase());
+    cont.innerHTML = `<div class="aj-sec"><h4>Personas ${tb ? 'de «' + esc(Nube.nombreTablero(tb)) + '»' : 'para asignar tareas'}</h4><p class="aj-ayuda">${tb ? 'Se apuntan solas cuando compartes el tablero o alguien acepta tu invitación. También puedes añadir a alguien solo para asignarle tareas y enviarle emails.' : 'Al asignar una tarea a alguien con email, puedes enviársela por email.'}</p>
       ${l.map(p => { const n = App.tareas.filter(t => t.personaId === p.id).length;
-        return `<div class="per-fila" data-id="${p.id}"><span class="avatar" style="background:${colorPersona(p)}">${esc(iniciales(p))}</span><div><b>${esc(nombreP(p))}</b><small>${esc(p.email||'sin email')} · ${n} tarea${n===1?'':'s'}</small></div><button class="ico-b" data-a="edit">✏️</button><button class="ico-b peligro" data-a="del">🗑</button></div>`; }).join('') || '<div class="vacio" style="margin-bottom:10px">Aún no hay nadie. Añade a las personas con las que repartes tareas.</div>'}
-      <button class="btn-pri btn-ancho" id="ajNuevaP">＋ Añadir persona</button></div>`;
+        return `<div class="per-fila" data-id="${p.id}"><span class="avatar" style="background:${colorPersona(p)}">${esc(iniciales(p))}</span><div><b>${esc(nombreP(p))}</b><small>${esc(p.email||'sin email')} · ${n} tarea${n===1?'':'s'}${acceso(p)}</small></div>${puedeInvitar(p) ? '<button class="ico-b" data-a="inv" title="Invitar al tablero">📬</button>' : ''}<button class="ico-b" data-a="edit">✏️</button><button class="ico-b peligro" data-a="del">🗑</button></div>`; }).join('') || '<div class="vacio" style="margin-bottom:10px">Aún no hay nadie. Añade a las personas con las que repartes tareas.</div>'}
+      <button class="btn-pri btn-ancho" id="ajNuevaP">＋ Añadir persona</button>
+      ${tb && Nube.esDueno(tb) ? '<button class="btn-sec btn-ancho" id="ajCompartir">👥 Compartir un tablero con alguien</button>' : ''}</div>`;
+    const bc = $('#ajCompartir'); if(bc) bc.onclick = () => Nube.compartir();
     $('#ajNuevaP').onclick = async () => { if(await formPersona()){ this.personas(); pintarTodo(); } };
     $$('.per-fila', cont).forEach(f => f.querySelectorAll('[data-a]').forEach(b => b.onclick = async () => {
       const p = persona(f.dataset.id);
       if(b.dataset.a === 'edit'){ if(await formPersona(p)){ this.personas(); pintarTodo(); } return; }
+      if(b.dataset.a === 'inv'){ await Nube.compartir(Nube.tid, p); this.personas(); return; }
       if(!await popConfirmar('¿Quitar a '+p.nombre+'?', 'Sus tareas se quedarán sin asignar.', 'Quitar')) return;
       App.personas = App.personas.filter(x => x.id !== p.id); await DB.borrar('personas', p.id);
       for(const t of App.tareas.filter(t => t.personaId === p.id)){ t.personaId = ''; await guardarTarea(t); }
       if(App.filtro === 'p:'+p.id) App.filtro = 'todas';
       this.personas(); pintarTodo();
     }));
+  },
+
+  /* 🎉 Al acabar una tarea */
+  fiesta(){
+    const a = App.ajustes; a.fiesta = Fiesta.cfg(); const f = a.fiesta, cont = $('#ajFiesta');
+    const seg = (id, ops, val) => `<div class="seg" id="${id}">${ops.map(([v,t]) => `<button data-v="${v}" class="${String(v)===String(val)?'on':''}">${t}</button>`).join('')}</div>`;
+    const chk = (id, on, txt, sub) => `<label class="check" style="margin-top:0"><input type="checkbox" id="${id}" ${on?'checked':''}><span class="caja"></span><span>${txt}${sub ? '<small>' + sub + '</small>' : ''}</span></label>`;
+    const auto = { 'es':'¡Muy bien!', 'ca':'Molt bé!', 'en':'Congratulations!' }[(a.idiomaVoz||'es').slice(0,2)];
+    cont.innerHTML = `
+      <div class="aj-sec"><h4>Fiesta al acabar una tarea</h4><div class="aj-fila">${chk('fsOn', f.activa, '🎉 Confeti y mensaje', 'Cuando una tarea pasa a «Acabada»')}</div></div>
+      <div class="aj-sec"><h4>Cuánto dura el confeti</h4>${seg('fsSeg', [[3,'3 s'],[5,'5 s'],[8,'8 s'],[12,'12 s']], f.segundos)}</div>
+      <div class="aj-sec"><h4>Mensaje</h4>
+        <input id="fsMsg" class="nom" style="width:100%;height:46px;border-radius:13px;border:2px solid var(--line);background:var(--colbg);padding:0 12px;font-size:16px;font-weight:800" maxlength="30" placeholder="Automático: ${esc(auto)}" value="${esc(f.mensaje||'')}">
+        <p class="aj-ayuda" style="margin-top:6px">Vacío = según el idioma (Configuración → Más): «¡Muy bien!», «Molt bé!» o «Congratulations!».</p></div>
+      <div class="aj-sec"><div class="aj-fila">${chk('fsMus', f.musica, '🎺 Musiquita de enhorabuena', 'Suena con el confeti (si el móvil no está en silencio)')}</div></div>
+      <div class="aj-sec"><h4>📧 Email de enhorabuena</h4>${seg('fsMail', [['preguntar','Preguntar'],['siempre','Siempre'],['nunca','Nunca']], f.email)}
+        <p class="aj-ayuda" style="margin-top:6px">Se envía a las personas del tablero (menos a ti) diciendo que la tarea ya está acabada.</p></div>
+      <button class="btn-pri btn-ancho" id="fsProbar">🎉 Probar ahora</button>`;
+    const g = async () => { await this.guardar(); };
+    $('#fsOn').onchange = e => { f.activa = e.target.checked; g(); };
+    $('#fsMus').onchange = e => { f.musica = e.target.checked; g(); };
+    $('#fsMsg').onchange = e => { f.mensaje = e.target.value.trim(); g(); };
+    $$('#fsSeg button').forEach(b => b.onclick = () => { f.segundos = +b.dataset.v; g(); this.fiesta(); });
+    $$('#fsMail button').forEach(b => b.onclick = () => { f.email = b.dataset.v; g(); this.fiesta(); });
+    $('#fsProbar').onclick = () => { f.mensaje = $('#fsMsg').value.trim(); g(); cerrar('ajustes'); Fiesta.despertar(); if(f.activa) Fiesta.confeti(f.segundos); else Fiesta.soloMensaje(); if(f.musica) Fiesta.musica(); };
   },
 
   /* Más opciones */

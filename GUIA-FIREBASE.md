@@ -30,22 +30,17 @@ Al acabar, me envías el bloque de datos del paso 2 y yo lo pongo en la app.
 1. Menú: **Compilación → Firestore Database** → **Crear base de datos**.
 2. Ubicación: **eur3 (Europa)** o **europe-southwest1 (Madrid)**. → Siguiente.
 3. Elige **Modo de producción** → **Crear**.
-4. Pestaña **Reglas** (*Rules*): borra todo lo que hay y **pega el contenido del archivo `firebase/firestore.rules`** (está en la carpeta de la app) → **Publicar**.
+4. Pestaña **Reglas** (*Rules*): borra todo lo que hay y **pega el contenido del archivo `firestore.rules`** (está en la carpeta de la app) → **Publicar**.
 
-## 5. Pasar al plan Blaze (necesario para las fotos y vídeos)
-Google pide una tarjeta para poder guardar archivos, **pero mientras no pases de lo gratuito no cobra nada**: 5 GB de fotos y vídeos y miles de lecturas al día gratis.
-1. Abajo a la izquierda, donde pone **Spark**, pulsa **Actualizar** (*Upgrade*) → **Blaze** → añade la tarjeta.
-2. Cuando te pregunte por un **presupuesto** (*budget*), pon **1 €**: si algún día se acercara, te llega un email de aviso.
-
-## 6. Almacén de fotos y vídeos (Storage)
-1. Menú: **Compilación → Storage** → **Comenzar**.
-2. Ubicación: elige **US-CENTRAL1** (o US-EAST1 / US-WEST1). ⚠️ Solo esas ubicaciones tienen los 5 GB **gratis**.
-3. **Modo de producción** → **Crear**.
-4. Pestaña **Reglas** (*Rules*): borra todo y **pega el contenido de `firebase/storage.rules`** → **Publicar**.
-5. Si sale un aviso pidiendo permiso para que Storage **consulte Firestore**, pulsa **Permitir** (las reglas lo necesitan para saber quién está en tu lista).
+## 5. Fotos y vídeos — sin tarjeta
+**No hace falta Storage ni el plan Blaze.** Las fotos y vídeos se guardan dentro de la propia base de datos (Firestore), con el plan gratuito **Spark**.
+- Límite gratuito: **1 GB** entre todo (unas 3.000 fotos, o unos 150 minutos de vídeo en calidad «Ligera»).
+- En la app, **Configuración → ☁️ Nube** muestra cuánto llevas gastado.
+- Si se llena, la app avisa y la foto o vídeo se queda solo en el móvil. Nunca te cobran nada.
+- El archivo `storage.rules` ya no se usa.
 
 ## 7. Envíame los datos
-Envíame el bloque del paso 2. Yo lo pongo en `js/firebase-config.js` y te digo qué archivos subir a GitHub.
+Envíame el bloque del paso 2. Yo lo pongo en `firebase-config.js` y te digo qué archivos subir a GitHub.
 
 ---
 

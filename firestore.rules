@@ -1,4 +1,5 @@
 rules_version = '2';
+// PorHacer V4 · varios tableros, invitaciones y miembros
 service cloud.firestore {
   match /databases/{database}/documents {
     function conEmail() {
@@ -7,18 +8,33 @@ service cloud.firestore {
     function miEmail() {
       return request.auth.token.email.lower();
     }
-    function esMiembro(t) {
-      let tab = get(/databases/$(database)/documents/tableros/$(t)).data;
-      return conEmail() && (tab.dueno == request.auth.uid || miEmail() in tab.miembros);
+    function aceptados(d) {
+      return d.get('aceptados', []);
+    }
+    // Puede entrar: el dueño, o quien ha sido invitado y ha aceptado
+    function dentro(t) {
+      let d = get(/databases/$(database)/documents/tableros/$(t)).data;
+      return conEmail() && (d.dueno == request.auth.uid || (miEmail() in d.miembros && miEmail() in aceptados(d)));
     }
     match /tableros/{t} {
       allow get, list: if conEmail() && (resource.data.dueno == request.auth.uid || miEmail() in resource.data.miembros);
       allow create: if conEmail() && request.resource.data.dueno == request.auth.uid;
-      allow update: if conEmail() && resource.data.dueno == request.auth.uid
-                    && request.resource.data.dueno == resource.data.dueno;
-      allow delete: if false;
+      allow delete: if conEmail() && resource.data.dueno == request.auth.uid;
+      allow update: if conEmail() && (
+        // el dueño cambia lo que quiera (menos quién es el dueño)
+        (resource.data.dueno == request.auth.uid && request.resource.data.dueno == resource.data.dueno)
+        // un invitado solo puede aceptar, rechazar o salir (solo él mismo)
+        || (miEmail() in resource.data.miembros
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['aceptados', 'miembros'])
+            && (
+              (request.resource.data.miembros == resource.data.miembros
+                && request.resource.data.get('aceptados', []).toSet() == aceptados(resource.data).toSet().union([miEmail()].toSet()))
+              || (request.resource.data.miembros.toSet() == resource.data.miembros.toSet().difference([miEmail()].toSet())
+                && request.resource.data.get('aceptados', []).toSet() == aceptados(resource.data).toSet().difference([miEmail()].toSet()))
+            ))
+      );
       match /{coleccion}/{doc} {
-        allow read, write: if esMiembro(t);
+        allow read, write: if dentro(t);
       }
     }
   }

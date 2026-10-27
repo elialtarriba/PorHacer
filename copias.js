@@ -40,8 +40,9 @@ const Copias = {
     const b = $('#cpExportar'); b.disabled = true; b.textContent = 'Preparando copia…';
     try{
       const copia = { app:'PorHacer', version:VERSION, fecha:new Date().toISOString(),
-        ajustes:App.ajustes, tareas:App.tareas.map(limpiaTarea), personas:App.personas, fotos:[], videos:[] };
+        ajustes:App.ajustes, tareas:App.tareas.map(limpiaTarea), personas:App.personas, fotos:[], videos:[], audios:[] };
       if(conFotos) for(const f of await DB.todos('fotos')) copia.fotos.push({ ...f, blob:await blobADatos(f.blob), mini:await blobADatos(f.mini) });
+      for(const x of await DB.todos('audios').catch(() => [])) if(x.blob) copia.audios.push({ ...x, blob:await blobADatos(x.blob) });
       if(conVideos) for(const v of await DB.todos('videos')) copia.videos.push({ ...v, blob:await blobADatos(v.blob), poster:await blobADatos(v.poster) });
       const blob = new Blob([JSON.stringify(copia)], { type:'application/json' });
       descargar(blob, 'porhacer-copia-' + hoyIso() + '.json');
@@ -62,11 +63,12 @@ const Copias = {
       alAbrir:(cx, fin) => $$('.opcion', cx).forEach(o => o.onclick = () => fin(o.dataset.v)) });
     if(!modo) return;
     try{
-      if(modo === 'sustituir'){ for(const a of ['tareas','personas','fotos','videos']) await DB.vaciar(a); }
+      if(modo === 'sustituir'){ for(const a of ['tareas','personas','fotos','videos','audios']) await DB.vaciar(a); }
       await DB.ponerVarios('tareas', c.tareas);
       await DB.ponerVarios('personas', c.personas || []);
       for(const f of c.fotos || []) await DB.poner('fotos', { ...f, blob:datosABlob(f.blob), mini:datosABlob(f.mini) });
       for(const v of c.videos || []) await DB.poner('videos', { ...v, blob:datosABlob(v.blob), poster:datosABlob(v.poster) });
+      for(const x of c.audios || []) await DB.poner('audios', { ...x, blob:datosABlob(x.blob) });
       if(c.ajustes && (modo === 'sustituir' || await popConfirmar('Configuración', '¿Quieres usar también los colores y columnas de la copia?', 'Sí, usarlos'))){
         App.ajustes = Object.assign(ajustesInicio(), c.ajustes, { id:'ajustes' });
       } else if(c.ajustes){

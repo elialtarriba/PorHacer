@@ -3,12 +3,14 @@
    «archivos» (bases de datos) separados para que nada se mezcle ni se llene:
      · PorHacer-datos  → tareas, personas y configuración
      · PorHacer-fotos  → fotos aligeradas
-     · PorHacer-videos → vídeos aligerados                                  */
+     · PorHacer-videos → vídeos aligerados
+     · PorHacer-audios → notas de audio (.mp3)                                  */
 
 const BASES = {
   datos:  { nombre:'PorHacer-datos',  almacenes:['tareas','personas','ajustes'] },
   fotos:  { nombre:'PorHacer-fotos',  almacenes:['fotos'] },
-  videos: { nombre:'PorHacer-videos', almacenes:['videos'] }
+  videos: { nombre:'PorHacer-videos', almacenes:['videos'] },
+  audios: { nombre:'PorHacer-audios', almacenes:['audios'] }
 };
 const _abiertas = {};
 
@@ -22,7 +24,7 @@ function abrirBase(clave){
       for(const a of b.almacenes){
         if(!db.objectStoreNames.contains(a)){
           const st = db.createObjectStore(a, { keyPath:'id' });
-          if(a==='fotos' || a==='videos') st.createIndex('tareaId','tareaId');
+          if(a==='fotos' || a==='videos' || a==='audios') st.createIndex('tareaId','tareaId');
         }
       }
     };
@@ -31,7 +33,7 @@ function abrirBase(clave){
   });
   return _abiertas[clave];
 }
-function baseDe(almacen){ return almacen==='fotos' ? 'fotos' : almacen==='videos' ? 'videos' : 'datos'; }
+function baseDe(almacen){ return ['fotos','videos','audios'].includes(almacen) ? almacen : 'datos'; }
 function _tx(almacen, modo, fn){
   return abrirBase(baseDe(almacen)).then(db => new Promise((ok, mal) => {
     const tx = db.transaction(almacen, modo);
