@@ -1,11 +1,11 @@
 // PorHacer · service worker: la app funciona sin conexión
-const CACHE = 'porhacer-v2';
+const CACHE = 'porhacer-v2b';
 const ARCHIVOS = [
-  './', './index.html', './manifest.json', './css/estilos.css?v=2',
-  './js/iconos.js?v=2', './js/temas.js?v=2', './js/db.js?v=2', './js/firebase-config.js?v=2', './js/nube.js?v=2',
-  './js/fotos.js?v=2', './js/videos.js?v=2', './js/voz.js?v=2', './js/calendario.js?v=2', './js/ajustes.js?v=2',
-  './js/copias.js?v=2', './js/app.js?v=2',
-  './img/logo.png', './img/icon-192.png', './img/icon-512.png', './img/apple-touch-icon.png'
+  './', './index.html', './manifest.json', './estilos.css?v=2',
+  './iconos.js?v=2', './temas.js?v=2', './db.js?v=2', './firebase-config.js?v=2', './nube.js?v=2',
+  './fotos.js?v=2', './videos.js?v=2', './voz.js?v=2', './calendario.js?v=2', './ajustes.js?v=2',
+  './copias.js?v=2', './app.js?v=2',
+  './logo.png', './icon-192.png', './icon-512.png', './apple-touch-icon.png'
 ];
 // Librería de Firebase: también se guarda para poder abrir la app sin internet
 const SDK = ['app','auth','firestore','storage'].map(n => `https://www.gstatic.com/firebasejs/10.14.1/firebase-${n}-compat.js`);

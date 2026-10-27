@@ -254,7 +254,7 @@ const Nube = {
   pantallaEntrar(modo='entrar'){
     const reg = modo === 'registro';
     this.pantalla(`
-      <img src="img/logo.png" class="nube-logo" alt="">
+      <img src="logo.png" class="nube-logo" alt="">
       <h2>${reg ? 'Crear cuenta' : 'Entrar en PorHacer'}</h2>
       <p class="nube-txt">${reg ? 'Usa el <b>mismo email</b> con el que te han apuntado en «Personas».' : 'Entra con tu email para ver las tareas compartidas, con sus fotos y vídeos.'}</p>
       <input id="nbMail" type="email" inputmode="email" autocomplete="email" placeholder="Email">
