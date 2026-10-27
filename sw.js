@@ -1,5 +1,5 @@
 // PorHacer · service worker: la app funciona sin conexión
-const CACHE = 'porhacer-v2b';
+const CACHE = 'porhacer-v2c';
 const ARCHIVOS = [
   './', './index.html', './manifest.json', './estilos.css?v=2',
   './iconos.js?v=2', './temas.js?v=2', './db.js?v=2', './firebase-config.js?v=2', './nube.js?v=2',
@@ -8,7 +8,7 @@ const ARCHIVOS = [
   './logo.png', './icon-192.png', './icon-512.png', './apple-touch-icon.png'
 ];
 // Librería de Firebase: también se guarda para poder abrir la app sin internet
-const SDK = ['app','auth','firestore','storage'].map(n => `https://www.gstatic.com/firebasejs/10.14.1/firebase-${n}-compat.js`);
+const SDK = ['app','auth','firestore'].map(n => `https://www.gstatic.com/firebasejs/10.14.1/firebase-${n}-compat.js`);
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => Promise.all([

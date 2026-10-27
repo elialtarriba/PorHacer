@@ -31,16 +31,15 @@ const Nube = {
     addEventListener('offline', () => { this.online = false; this.pintarEstado(); });
     if(!this.configurada()){ this.pintarEstado(); return; }
     try{
-      for(const f of ['firebase-app-compat.js','firebase-auth-compat.js','firebase-firestore-compat.js','firebase-storage-compat.js']) await cargarScript(SDK_FB + f);
+      for(const f of ['firebase-app-compat.js','firebase-auth-compat.js','firebase-firestore-compat.js']) await cargarScript(SDK_FB + f);
     }catch(e){ console.warn(e); this.pintarEstado('⚠️'); return; }
     firebase.initializeApp(FIREBASE_CONFIG);
     this.auth = firebase.auth();
     this.db = firebase.firestore();
     try{ await this.db.enablePersistence({ synchronizeTabs:true }); }catch(e){}
-    this.st = firebase.storage();
     // Solo para pruebas en el ordenador (emuladores de Firebase)
     if(location.hostname === 'localhost' && location.search.includes('emu=1')){
-      this.auth.useEmulator('http://127.0.0.1:9099'); this.db.useEmulator('127.0.0.1', 8080); this.st.useEmulator('127.0.0.1', 9199);
+      this.auth.useEmulator('http://127.0.0.1:9099'); this.db.useEmulator('127.0.0.1', 8080);
     }
     this.envolverDB();
     this.auth.onAuthStateChanged(u => this.alCambiarUsuario(u));
@@ -162,27 +161,51 @@ const Nube = {
     toast('✅ Todo subido a la nube');
   },
 
-  /* ---------- Fotos y vídeos ---------- */
+  /* ---------- Fotos y vídeos ----------
+     Se guardan dentro de la base de datos (plan gratis, sin tarjeta), partidos
+     en trozos de 900 KB. Límite gratuito de Firebase: 1 GB en total.        */
+  TROZO: 900 * 1024,
+  LIMITE: 1024 * 1024 * 1024,
+  _minis: {},
+  usadoNube(){ return this.media.reduce((s, m) => s + (m.size||0) + (m.sizeMini||0), 0); },
+  async _subirTrozos(id, clave, blob){
+    const buf = new Uint8Array(await blob.arrayBuffer());
+    const n = Math.max(1, Math.ceil(buf.length / this.TROZO));
+    for(let k = 0; k < n; k++){
+      const parte = buf.subarray(k*this.TROZO, (k+1)*this.TROZO);
+      await this.col('trozos').doc(clave + '_' + k).set({ mid:id, clave, k, b: firebase.firestore.Blob.fromUint8Array(parte) });
+    }
+    return n;
+  },
+  async _bajarTrozos(clave, n, mime){
+    const snap = await this.col('trozos').where('clave', '==', clave).get();
+    const partes = snap.docs.map(d => d.data()).sort((a,b) => a.k - b.k);
+    if(!partes.length || (n && partes.length < n)) return null;
+    return new Blob(partes.map(p => p.b.toUint8Array()), { type: mime || 'application/octet-stream' });
+  },
   async subirMedia(tipo, o){
     if(!o || !o.blob) return;
+    if(this.media.some(m => m.id === o.id)) return;
+    const pequeña = tipo === 'fotos' ? o.mini : o.poster;
+    const tam = (o.blob.size||0) + (pequeña ? pequeña.size : 0);
+    if(this.usadoNube() + tam > this.LIMITE * 0.97){
+      popAviso('Nube llena', 'Ya casi no queda sitio gratis en la nube (1 GB). Esta '+(tipo==='fotos'?'foto':'vídeo')+' se queda solo en este dispositivo. Borra vídeos antiguos para hacer sitio.');
+      return;
+    }
     this.subiendo++; this.pintarEstado();
     try{
-      const base = `tableros/${this.tid}/${tipo}/${o.id}`;
-      const ext = tipo === 'fotos' ? 'jpg' : ((o.tipo||'').includes('webm') ? 'webm' : (o.tipo||'').includes('quicktime') ? 'mov' : 'mp4');
-      const sube = async (blob, ruta) => { const r = this.st.ref(ruta); await r.put(blob, { contentType: blob.type || (ext==='jpg'?'image/jpeg':'video/'+ext) }); return r.getDownloadURL(); };
-      const meta = { id:o.id, tareaId:o.tareaId, tipo, size:o.size||0, original:o.original||0, w:o.w||0, h:o.h||0, dur:o.dur||0,
-        nombre:o.nombre||'', fecha:o.fecha||Date.now(), mime:o.tipo||o.blob.type||'', autor:this.email(), rutas:[] };
-      meta.url = await sube(o.blob, `${base}.${ext}`); meta.rutas.push(`${base}.${ext}`);
-      const pequeña = tipo === 'fotos' ? o.mini : o.poster;
-      if(pequeña){ const k = tipo === 'fotos' ? 'urlMini' : 'urlPoster'; meta[k] = await sube(pequeña, `${base}_mini.jpg`); meta.rutas.push(`${base}_mini.jpg`); }
+      const meta = { id:o.id, tareaId:o.tareaId, tipo, size:o.blob.size||0, original:o.original||0, w:o.w||0, h:o.h||0, dur:o.dur||0,
+        nombre:o.nombre||'', fecha:o.fecha||Date.now(), mime:o.tipo||o.blob.type||'', autor:this.email(), listo:false };
+      meta.partes = await this._subirTrozos(o.id, o.id, o.blob);
+      if(pequeña){ meta.partesMini = await this._subirTrozos(o.id, o.id + '_m', pequeña); meta.sizeMini = pequeña.size; }
+      meta.listo = true;
       await this.col('media').doc(o.id).set(limpioFS(meta));
     }catch(e){ console.warn(e); toast('⚠️ No se pudo subir una '+(tipo==='fotos'?'foto':'vídeo')+' a la nube'); }
     this.subiendo--; this.pintarEstado();
   },
   async borrarMedia(id){
-    const m = this.media.find(x => x.id === id);
     try{ await this.col('media').doc(id).delete(); }catch(e){}
-    if(m) for(const r of m.rutas || []) this.st.ref(r).delete().catch(() => {});
+    try{ const snap = await this.col('trozos').where('mid', '==', id).get(); for(const d of snap.docs) await d.ref.delete(); }catch(e){ console.warn(e); }
   },
 
   /* Se «envuelve» el almacén local: lo que se guarda aquí también va a la nube */
@@ -215,13 +238,27 @@ const Nube = {
       if(!N.activa || (a !== 'fotos' && a !== 'videos')) return loc;
       const idx = Object.fromEntries(loc.map(x => [x.id, x]));
       const out = N.media.filter(m => m.tareaId === tareaId && m.tipo === a).map(m => ({ ...m, ...(idx[m.id] || {}), tipo: (idx[m.id]||{}).tipo || m.mime }));
+      // miniaturas de lo que han subido otros (pequeñas, se guardan en memoria)
+      for(const x of out){
+        if(x.blob || x.mini || x.poster || !x.partesMini) continue;
+        if(!N._minis[x.id]) N._minis[x.id] = await N._bajarTrozos(x.id + '_m', x.partesMini, 'image/jpeg').catch(() => null);
+        if(N._minis[x.id]){ if(a === 'fotos') x.mini = N._minis[x.id]; else x.poster = N._minis[x.id]; }
+      }
       loc.forEach(x => { if(!out.some(y => y.id === x.id)) out.push(x); });
       return out;
     };
     DB.uno = async (a, id) => {
       const loc = await _orig.uno(a, id);
       if(loc || !N.activa || (a !== 'fotos' && a !== 'videos')) return loc;
-      return N.media.find(m => m.id === id) || null;
+      const m = N.media.find(x => x.id === id); if(!m) return null;
+      if(!m.listo) return { ...m };
+      if(a === 'videos') toast('⬇️ Descargando el vídeo…', null, null, 15000);
+      const blob = await N._bajarTrozos(m.id, m.partes, m.mime || (a==='fotos'?'image/jpeg':'video/mp4')).catch(e => { console.warn(e); return null; });
+      $('#toast').classList.remove('ver');
+      if(!blob) return { ...m };
+      const local = { ...m, blob, tipo: m.mime, mini: a==='fotos' ? N._minis[m.id] : undefined, poster: a==='videos' ? N._minis[m.id] : undefined };
+      await _orig.poner(a, local);          // se guarda aquí para la próxima vez
+      return local;
     };
     DB.resumen = async (a) => {
       const loc = await _orig.resumen(a);
@@ -354,6 +391,8 @@ const Nube = {
     cont.innerHTML = `<div class="aj-sec"><h4>Nube compartida</h4><div class="espacio">
         <div style="font-size:14.5px;font-weight:800">${this.activa ? '☁️ Conectada' : '☁︎ Sin tablero'} · ${esc(this.user.email)}</div>
         ${t ? `<p>${duena ? 'Eres la <b>dueña</b> de este tablero.' : 'Tablero de <b>'+esc(t.duenoEmail)+'</b>.'}</p>` : ''}
+        <p>📷🎬 Fotos y vídeos en la nube: <b>${tamTxt(this.usadoNube())}</b> de 1 GB gratis</p>
+        <div class="barra-prog"><i style="width:${Math.max(1, Math.min(100, this.usadoNube()/this.LIMITE*100))}%"></i></div>
         <p>${this.online ? (this.subiendo ? '⬆️ Subiendo '+this.subiendo+' archivo(s)…' : '✅ Todo sincronizado') : '📴 Sin internet: los cambios se subirán al volver la conexión.'}</p>
       </div></div>
       ${t ? `<div class="aj-sec"><h4>Quién lo ve (${miembros.length})</h4>

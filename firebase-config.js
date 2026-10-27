@@ -1,21 +1,14 @@
 /* PorHacer · datos de conexión con Firebase (la nube compartida)
-   Se rellenan una sola vez con lo que da la consola de Firebase
-   (Configuración del proyecto → Tus apps → SDK config).
-   Mientras esté en null, la app funciona solo en este dispositivo.
    Estos datos NO son secretos: la seguridad la ponen las reglas de Firebase. */
 
-const FIREBASE_CONFIG = null;
-
-/* Ejemplo de cómo queda una vez rellenado:
 const FIREBASE_CONFIG = {
-  apiKey: "AIza...",
-  authDomain: "porhacer-xxxx.firebaseapp.com",
-  projectId: "porhacer-xxxx",
-  storageBucket: "porhacer-xxxx.firebasestorage.app",
-  messagingSenderId: "1234567890",
-  appId: "1:1234567890:web:abcdef"
+  apiKey: "AIzaSyBvoBcz2QwGHMSPZ5WfUndGX2Fyec-3jDU",
+  authDomain: "porhacer-36f11.firebaseapp.com",
+  projectId: "porhacer-36f11",
+  storageBucket: "porhacer-36f11.firebasestorage.app",
+  messagingSenderId: "695503716197",
+  appId: "1:695503716197:web:99e9bdad91252e80d7ab8c"
 };
-*/
 
 // Dirección pública de la app (se pone en los emails de las tareas)
 const APP_URL = 'https://elialtarriba.github.io/PorHacer/';

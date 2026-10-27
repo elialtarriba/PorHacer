@@ -427,7 +427,7 @@ async function pintarFotos(){
   $('#nFotos').textContent = l.length || '';
   const tot = l.reduce((s,x) => s+x.size, 0), ori = l.reduce((s,x) => s+(x.original||x.size), 0);
   $('#fotosInfo').textContent = l.length ? `${l.length} foto${l.length>1?'s':''} · ocupan ${tamTxt(tot)}${ori>tot ? ' (sin aligerar serían '+tamTxt(ori)+')' : ''}` : 'Las fotos se aligeran solas antes de guardarse.';
-  $('#galFotos').innerHTML = l.length ? l.map(f => `<div class="mini" data-id="${f.id}"><img src="${(f.mini||f.blob) ? urlDe(f.mini||f.blob) : esc(f.urlMini||f.url)}" alt="" loading="lazy"><span class="pes">${tamTxt(f.size)}</span></div>`).join('') : '<div class="vacio">📷 Todavía no hay fotos en esta tarea</div>';
+  $('#galFotos').innerHTML = l.length ? l.map(f => `<div class="mini" data-id="${f.id}">${(f.mini||f.blob) ? `<img src="${urlDe(f.mini||f.blob)}" alt="">` : '<span class="play">⏳</span>'}<span class="pes">${tamTxt(f.size)}</span></div>`).join('') : '<div class="vacio">📷 Todavía no hay fotos en esta tarea</div>';
   $$('#galFotos .mini').forEach(m => m.onclick = () => verMedia('fotos', m.dataset.id));
 }
 async function pintarVideos(){
@@ -435,15 +435,15 @@ async function pintarVideos(){
   $('#nVideos').textContent = l.length || '';
   const tot = l.reduce((s,x) => s+x.size, 0), ori = l.reduce((s,x) => s+(x.original||x.size), 0);
   $('#videosInfo').textContent = l.length ? `${l.length} vídeo${l.length>1?'s':''} · ocupan ${tamTxt(tot)}${ori>tot ? ' (sin aligerar serían '+tamTxt(ori)+')' : ''}` : 'Los vídeos se aligeran (tamaño y calidad) antes de guardarse. Tarda lo mismo que dura el vídeo.';
-  $('#galVideos').innerHTML = l.length ? l.map(v => `<div class="mini" data-id="${v.id}">${v.poster ? `<img src="${urlDe(v.poster)}" alt="">` : v.urlPoster ? `<img src="${esc(v.urlPoster)}" alt="" loading="lazy">` : ''}<span class="play">▶</span><span class="pes">${durTxt(v.dur)} · ${tamTxt(v.size)}</span></div>`).join('') : '<div class="vacio">🎬 Todavía no hay vídeos en esta tarea</div>';
+  $('#galVideos').innerHTML = l.length ? l.map(v => `<div class="mini" data-id="${v.id}">${v.poster ? `<img src="${urlDe(v.poster)}" alt="">` : ''}<span class="play">▶</span><span class="pes">${durTxt(v.dur)} · ${tamTxt(v.size)}</span></div>`).join('') : '<div class="vacio">🎬 Todavía no hay vídeos en esta tarea</div>';
   $$('#galVideos .mini').forEach(m => m.onclick = () => verMedia('videos', m.dataset.id));
 }
 let _visor = null;
 async function verMedia(tipo, id){
   const o = await DB.uno(tipo, id); if(!o) return;
   _visor = { tipo, id };
-  const u = o.blob ? urlDe(o.blob) : o.url;
-  if(!u){ toast('⏳ Aún se está subiendo, prueba en un momento'); return; }
+  const u = o.blob ? urlDe(o.blob) : null;
+  if(!u){ toast('⏳ Aún se está subiendo o no hay conexión. Prueba en un momento.'); return; }
   $('#visorCont').innerHTML = tipo === 'fotos' ? `<img src="${u}" alt="">` : `<video src="${u}" controls playsinline autoplay></video>`;
   $('#visorInfo').textContent = (o.w && o.h ? o.w+'×'+o.h+' · ' : '') + tamTxt(o.size) + (o.dur ? ' · '+durTxt(o.dur) : '');
   $('#visor').classList.add('abierto');
