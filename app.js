@@ -1,6 +1,6 @@
 /* PorHacer · app principal: tablero de columnas, tareas y editor */
 
-const VERSION = 'V4.13';
+const VERSION = 'V4.15';
 const $ = (s, r=document) => r.querySelector(s);
 const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -981,12 +981,14 @@ async function iniciar(){
   Cal.iniciar();
   Avisos.iniciar();
   Bloc.iniciar();
+  Listas.iniciar();
   iniciarNotasRicas();
   pintarTodo();
   setTimeout(() => $('#splash').classList.add('fuera'), 900);
   setTimeout(() => document.body.classList.add('ya'), 1800);
   pedirPersistencia();
   Nube.iniciar();
+  if(App.ajustes.inicio === 'listas') Listas.abrir(); else if(App.ajustes.inicio === 'cal') Cal.abrir();
   $('#nubeEstado').onclick = () => { if(!Nube.user) Nube.pantallaEntrar(); else Nube.explicarEstado(); };
   if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(()=>{});
 }

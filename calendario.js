@@ -48,7 +48,7 @@ const Cal = {
       const m = e.target.closest('[data-m]'); if(m){ const [y,mm] = m.dataset.m.split('-').map(Number); this.fecha = new Date(y, mm, 1); this.cambiarModo('mes'); }
     });
   },
-  abrir(){ $('#vTablero').classList.remove('activa'); $('#vCal').classList.add('activa'); $('#fab').style.display='none'; this.pintar(); this.cargarOtros(true); },
+  abrir(){ $('#vTablero').classList.remove('activa'); $('#vListas').classList.remove('activa'); $('#vCal').classList.add('activa'); $('#fab').style.display='none'; this.pintar(); this.cargarOtros(true); },
   cerrar(){ $('#vCal').classList.remove('activa'); $('#vTablero').classList.add('activa'); $('#fab').style.display=''; pintarTodo(); },
   async cambiarModo(m){ this.modo = m; App.ajustes.calModo = m; guardarAjustes(); this.pintar(); },
   cambio(n){

@@ -10,9 +10,9 @@
 <meta name="theme-color" content="#eeeff1">
 <title>PorHacer</title>
 <link rel="icon" href="logo.png" type="image/png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png?v=53">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=55">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="estilos.css?v=53">
+<link rel="stylesheet" href="estilos.css?v=55">
 </head>
 <body>
 
@@ -39,11 +39,12 @@
     </div>
     <div class="top-der">
       <div class="top-btns">
+        <button class="ibtn ibtn-img" id="btnListas" title="Listas" aria-label="Listas"></button>
         <button class="ibtn" id="btnCal" title="Calendario" aria-label="Calendario"></button>
         <button class="ibtn" id="btnAjustes" title="Configuración" aria-label="Configuración"></button>
       </div>
       <div class="insignias">
-            <span class="ver" id="verTxt">V4.13</span>
+            <span class="ver" id="verTxt">V4.15</span>
             <button class="nube-estado off" id="nubeEstado" hidden title="Nube" aria-label="Nube"></button>
           </div>
     </div>
@@ -65,6 +66,25 @@
   <button class="fab" id="fab" aria-label="Nueva tarea"><span>＋</span> Nueva tarea</button>
 </section>
 
+<!-- ============ LISTAS FÁCILES ============ -->
+<section id="vListas" class="vista">
+  <header class="top ls-top">
+    <button class="ibtn" id="lsVolver" title="Volver a mis tareas" aria-label="Volver a mis tareas"></button>
+    <div class="ls-cab">
+      <button class="ls-titulo" id="lsTitulo"></button>
+      <small id="lsFecha"></small>
+    </div>
+    <button class="ibtn" id="lsCal" title="Calendario" aria-label="Calendario"></button>
+    <button class="ibtn ls-opc" id="lsOpc" title="Opciones de lista" aria-label="Opciones de lista">⋯</button>
+  </header>
+  <div class="ls-add">
+    <button class="ls-mas" id="lsMas" aria-label="Añadir">＋</button>
+    <input id="lsNuevo" placeholder="Agregar un punto a la lista" enterkeyhint="done" autocomplete="off" maxlength="200">
+  </div>
+  <div class="ls-cuerpo" id="lsCuerpo"></div>
+  <input type="file" id="lsFondoIn" accept="image/*" hidden>
+</section>
+
 <!-- ============ CALENDARIO ============ -->
 <section id="vCal" class="vista">
   <header class="top cal-top">
@@ -74,6 +94,7 @@
       <small id="calSub"></small>
     </div>
     <div class="cal-der">
+      <button class="ibtn ibtn-img" id="btnListas2" title="Listas" aria-label="Listas"></button>
       <button class="ibtn" id="btnBloc" title="Bloc de notas" aria-label="Bloc de notas"></button>
       <button class="ibtn" id="btnAjustes2" title="Configuración" aria-label="Configuración"></button>
     </div>
@@ -328,23 +349,24 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="iconos.js?v=53"></script>
-<script src="temas.js?v=53"></script>
-<script src="db.js?v=53"></script>
-<script src="firebase-config.js?v=53"></script>
-<script src="email-config.js?v=53"></script>
-<script src="correo.js?v=53"></script>
-<script src="audio.js?v=53"></script>
-<script src="bloc.js?v=53"></script>
-<script src="avisos.js?v=53"></script>
-<script src="fiesta.js?v=53"></script>
-<script src="nube.js?v=53"></script>
-<script src="fotos.js?v=53"></script>
-<script src="videos.js?v=53"></script>
-<script src="voz.js?v=53"></script>
-<script src="calendario.js?v=53"></script>
-<script src="ajustes.js?v=53"></script>
-<script src="copias.js?v=53"></script>
-<script src="app.js?v=53"></script>
+<script src="iconos.js?v=55"></script>
+<script src="temas.js?v=55"></script>
+<script src="db.js?v=55"></script>
+<script src="firebase-config.js?v=55"></script>
+<script src="email-config.js?v=55"></script>
+<script src="correo.js?v=55"></script>
+<script src="audio.js?v=55"></script>
+<script src="listas.js?v=55"></script>
+<script src="bloc.js?v=55"></script>
+<script src="avisos.js?v=55"></script>
+<script src="fiesta.js?v=55"></script>
+<script src="nube.js?v=55"></script>
+<script src="fotos.js?v=55"></script>
+<script src="videos.js?v=55"></script>
+<script src="voz.js?v=55"></script>
+<script src="calendario.js?v=55"></script>
+<script src="ajustes.js?v=55"></script>
+<script src="copias.js?v=55"></script>
+<script src="app.js?v=55"></script>
 </body>
 </html>

@@ -163,6 +163,8 @@ const Ajustes = {
     const a = App.ajustes, cont = $('#ajMas');
     const seg = (id, ops, val) => `<div class="seg" id="${id}">${ops.map(([v,t]) => `<button data-v="${v}" class="${v===val?'on':''}">${t}</button>`).join('')}</div>`;
     cont.innerHTML = `
+      <div class="aj-sec"><h4>Al abrir la app, ver…</h4>${seg('ajInicio', [['tablero','📋 PorHacer'],['listas','📝 Listas'],['cal','📅 Calendario']], a.inicio || 'tablero')}
+        <p class="aj-ayuda">Lo primero que se ve al entrar en la app, en este aparato.</p></div>
       <div class="aj-sec"><h4>Idioma del micrófono</h4>${seg('ajVoz', [['es-ES','Castellano'],['ca-ES','Català'],['en-GB','English']], a.idiomaVoz)}
         <p class="aj-ayuda">Puedes decir «coma», «punto», «punto y aparte», «nueva línea».</p></div>
       <div class="aj-sec"><h4>Calidad de las fotos</h4>${seg('ajFoto', [['ligera','Ligera'],['normal','Normal'],['alta','Alta']], a.calidadFoto)}
@@ -172,7 +174,7 @@ const Ajustes = {
       <div class="aj-sec"><h4>Firma de los emails</h4><input id="ajFirma" class="nom" style="width:100%;height:46px;border-radius:13px;border:2px solid var(--line);background:var(--colbg);padding:0 12px;font-size:16px;font-weight:700" placeholder="Por ejemplo: Elisabeth" value="${esc(a.firma||'')}"></div>
       <div class="pie-copy">PorHacer ${VERSION} · © Copy</div>`;
     const enlazar = (id, k) => $$('#'+id+' button').forEach(b => b.onclick = async () => { a[k] = b.dataset.v; await this.guardar(); this.mas(); });
-    enlazar('ajVoz','idiomaVoz'); enlazar('ajFoto','calidadFoto'); enlazar('ajVid','calidadVideo');
+    enlazar('ajInicio','inicio'); enlazar('ajVoz','idiomaVoz'); enlazar('ajFoto','calidadFoto'); enlazar('ajVid','calidadVideo');
     $('#ajFirma').onchange = async e => { a.firma = e.target.value.trim(); await this.guardar(); };
   }
 };
