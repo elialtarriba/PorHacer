@@ -10,7 +10,7 @@ const Ajustes = {
     $$('#ajTabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
     $$('#ajustes .tab-pan').forEach(p => p.classList.toggle('on', p.dataset.p === t));
     $('#ajustes .hoja-scroll').scrollTop = 0;
-    ({ temas:()=>this.temas(), colores:()=>this.colores(), columnas:()=>this.columnas(), personas:()=>this.personas(), copias:()=>Copias.pintar(), tableros:()=>Nube.pintarTableros($('#ajNube')), fiesta:()=>this.fiesta(), mas:()=>this.mas() })[t]();
+    ({ temas:()=>this.temas(), colores:()=>this.colores(), columnas:()=>this.columnas(), personas:()=>this.personas(), copias:()=>Copias.pintar(), tableros:()=>Nube.pintarTableros($('#ajNube')), fiesta:()=>this.fiesta(), bloc:()=>Bloc.pintarAjustes($('#ajBloc')), mas:()=>this.mas() })[t]();
   },
   async guardar(){ await guardarAjustes(); },
 

@@ -10,9 +10,9 @@
 <meta name="theme-color" content="#eeeff1">
 <title>PorHacer</title>
 <link rel="icon" href="logo.png" type="image/png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png?v=46">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=53">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="estilos.css?v=46">
+<link rel="stylesheet" href="estilos.css?v=53">
 </head>
 <body>
 
@@ -43,7 +43,7 @@
         <button class="ibtn" id="btnAjustes" title="Configuración" aria-label="Configuración"></button>
       </div>
       <div class="insignias">
-            <span class="ver" id="verTxt">V4.6</span>
+            <span class="ver" id="verTxt">V4.13</span>
             <button class="nube-estado off" id="nubeEstado" hidden title="Nube" aria-label="Nube"></button>
           </div>
     </div>
@@ -73,7 +73,10 @@
       <h2 id="calTit"></h2>
       <small id="calSub"></small>
     </div>
-    <button class="ibtn" id="btnAjustes2" title="Configuración" aria-label="Configuración"></button>
+    <div class="cal-der">
+      <button class="ibtn" id="btnBloc" title="Bloc de notas" aria-label="Bloc de notas"></button>
+      <button class="ibtn" id="btnAjustes2" title="Configuración" aria-label="Configuración"></button>
+    </div>
   </header>
   <div class="cal-ctrl">
     <button class="flecha" id="calPrev" aria-label="Anterior">‹</button>
@@ -113,7 +116,8 @@
       <!-- Pestaña tarea -->
       <div class="tab-pan on" data-p="tarea">
         <div class="campo-nota">
-          <textarea id="edNotas" rows="4" placeholder="Notas… (pulsa el micro y habla)"></textarea>
+          <div class="notas-barra" id="edNotasBarra"></div>
+          <div id="edNotas" class="notas-rico" contenteditable="true" data-ph="Notas… (pulsa el micro y habla)"></div>
           <button class="mic grande" data-mic="edNotas" aria-label="Dictar nota"></button>
         </div>
         <div class="voz-estado" id="vozEstado"></div>
@@ -143,6 +147,14 @@
           <button type="button" class="hoy-fecha" id="edHoy" title="Poner la fecha de hoy">☀️<br>Hoy</button>
         </div>
         <div class="dur" id="edDur"></div>
+
+        <div class="lbl avisos-lbl">🔔 Avisos con sonido <small class="gris">(solo te suenan a ti)</small>
+          <div class="fila-avisos">
+            <span class="fecha-campo aviso-campo"><input type="datetime-local" id="edAviso1"><span class="fecha-vacia">Aviso 1: sin poner</span><button type="button" class="fecha-x" data-x="edAviso1" aria-label="Quitar aviso">✕</button><small class="aviso-info" id="edAvisoInfo1"></small></span>
+            <span class="fecha-campo aviso-campo"><input type="datetime-local" id="edAviso2"><span class="fecha-vacia">Aviso 2: sin poner</span><button type="button" class="fecha-x" data-x="edAviso2" aria-label="Quitar aviso">✕</button><small class="aviso-info" id="edAvisoInfo2"></small></span>
+          </div>
+          <div class="aviso-rapido"><button type="button" class="mini-btn" data-av="1h">⏱ Dentro de 1 hora</button><button type="button" class="mini-btn" data-av="man">🌅 Mañana a las 9</button></div>
+        </div>
 
         <div class="lbl">Asignada a
           <div class="fila-persona">
@@ -239,6 +251,7 @@
       <button data-t="columnas">🗂️ Columnas</button>
       <button data-t="personas">👥 Personas</button>
       <button data-t="fiesta">🎉 Al acabar</button>
+      <button data-t="bloc">🔒 Bloc</button>
       <button data-t="copias">💾 Copias</button>
       <button data-t="mas">⚙️ Más</button>
     </div>
@@ -251,6 +264,37 @@
       <div class="tab-pan" data-p="tableros"><div id="ajNube"></div></div>
       <div class="tab-pan" data-p="fiesta"><div id="ajFiesta"></div></div>
       <div class="tab-pan" data-p="mas"><div id="ajMas"></div></div>
+      <div class="tab-pan" data-p="bloc"><div id="ajBloc"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ BLOC DE NOTAS SECRETO ============ -->
+<div class="velo velo-bloc" id="bloc">
+  <div class="hoja hoja-bloc">
+    <div class="hoja-cab">
+      <span class="cab-ico bloc-ico">📒</span>
+      <b>Bloc de notas</b>
+      <small class="bloc-estado" id="blocEstado"></small>
+      <button class="cerrar" id="blocMenu" aria-label="Opciones">⋯</button>
+      <button class="cerrar" id="blocX" aria-label="Cerrar con candado">✕</button>
+    </div>
+    <div class="bloc-tabs tabs-scroll" id="blocTabs"></div>
+    <div class="bloc-papel" id="blocPapel">
+      <div class="bloc-barra" id="blocBarra">
+        <button type="button" data-a="b" id="blocB" title="Negrita"><b>B</b></button>
+        <button type="button" data-a="n" title="Texto normal">Aa</button>
+        <span class="bloc-sep"></span>
+        <button type="button" data-a="check" title="Lista con casillas">☑</button>
+        <button type="button" data-a="punto" title="Lista con puntos">•≡</button>
+        <button type="button" data-a="num" title="Lista con números">1.</button>
+        <span class="bloc-sep"></span>
+        <button type="button" data-a="foto" title="Poner una foto">📷</button><input type="file" id="blocFotoIn" accept="image/*" multiple hidden>
+        <span class="bloc-sep"></span>
+        <span class="bloc-subs" id="blocSubs"></span>
+        <span class="bloc-iconos" id="blocIconos"></span>
+      </div>
+      <div class="bloc-hoja" id="blocHoja" contenteditable="true" spellcheck="true" data-ph="Escribe aquí…"></div>
     </div>
   </div>
 </div>
@@ -284,21 +328,23 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="iconos.js?v=46"></script>
-<script src="temas.js?v=46"></script>
-<script src="db.js?v=46"></script>
-<script src="firebase-config.js?v=46"></script>
-<script src="email-config.js?v=46"></script>
-<script src="correo.js?v=46"></script>
-<script src="audio.js?v=46"></script>
-<script src="fiesta.js?v=46"></script>
-<script src="nube.js?v=46"></script>
-<script src="fotos.js?v=46"></script>
-<script src="videos.js?v=46"></script>
-<script src="voz.js?v=46"></script>
-<script src="calendario.js?v=46"></script>
-<script src="ajustes.js?v=46"></script>
-<script src="copias.js?v=46"></script>
-<script src="app.js?v=46"></script>
+<script src="iconos.js?v=53"></script>
+<script src="temas.js?v=53"></script>
+<script src="db.js?v=53"></script>
+<script src="firebase-config.js?v=53"></script>
+<script src="email-config.js?v=53"></script>
+<script src="correo.js?v=53"></script>
+<script src="audio.js?v=53"></script>
+<script src="bloc.js?v=53"></script>
+<script src="avisos.js?v=53"></script>
+<script src="fiesta.js?v=53"></script>
+<script src="nube.js?v=53"></script>
+<script src="fotos.js?v=53"></script>
+<script src="videos.js?v=53"></script>
+<script src="voz.js?v=53"></script>
+<script src="calendario.js?v=53"></script>
+<script src="ajustes.js?v=53"></script>
+<script src="copias.js?v=53"></script>
+<script src="app.js?v=53"></script>
 </body>
 </html>

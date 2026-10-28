@@ -30,7 +30,9 @@ const Voz = {
   _apagar(ses){
     ses.boton.classList.remove('oyendo');
     if(ses.estado && ses.estado.dataset.de === ses.id) ses.estado.textContent = '';
-    const c = ses.campo; c.value = c.value.replace(/[ \t]+$/,'');
+    const c = ses.campo;
+    if(ses.span){ const t = document.createTextNode(ses.span.textContent); ses.span.replaceWith(t); ses.span = null; }
+    else c.value = c.value.replace(/[ \t]+$/,'');
     c.dispatchEvent(new Event('input', { bubbles:true }));
   },
 
@@ -46,8 +48,12 @@ const Voz = {
     const idioma = (App.ajustes && App.ajustes.idiomaVoz) || 'es-ES';
     const r = new SR();
     r.lang = idioma; r.continuous = true; r.interimResults = true;
-    let base = campo.value; if(base && !/\s$/.test(base)) base += ' ';
+    let base = campo.isContentEditable ? (campo.textContent || '') : campo.value; if(base && !/\s$/.test(base)) base += ' ';
     const ses = { id: String(Date.now()), rec:r, campo, boton, estado, base, final:'', parado:false };
+    if(campo.isContentEditable){       // notas con negrita: lo dictado va al final, sin tocar lo de antes
+      if(campo.textContent && !/\s$/.test(campo.textContent)) campo.appendChild(document.createTextNode(' '));
+      ses.span = document.createElement('span'); campo.appendChild(ses.span);
+    }
     this.activo = ses;
     boton.classList.add('oyendo');
     if(estado){ estado.dataset.de = ses.id; estado.textContent = '🎙️ Te escucho… pulsa otra vez el micro para parar'; }
@@ -62,7 +68,7 @@ const Voz = {
       // al parar, solo se guarda lo que ya es definitivo
       let texto = this._limpiar(ses.final + (ses.parado ? '' : interino), idioma).replace(/ +([,.?])/g,'$1');
       if(!ses.base.trim() && texto) texto = texto.charAt(0).toUpperCase() + texto.slice(1);
-      campo.value = ses.base + texto;
+      if(ses.span) ses.span.textContent = texto; else campo.value = ses.base + texto;
       campo.dispatchEvent(new Event('input', { bubbles:true }));
       if(campo.tagName === 'TEXTAREA') campo.scrollTop = campo.scrollHeight;
     };

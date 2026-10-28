@@ -1,6 +1,16 @@
 /* PorHacer · iconos dibujados al estilo de las imágenes de la app
    (marco oscuro redondeado + detalles en rojo). Usan los colores del tema. */
 const ICO = {
+  // Bloc de notas: libreta con anillas, líneas y un candado rojo
+  bloc: `<svg viewBox="0 0 64 64" aria-hidden="true">
+    <rect x="12" y="7" width="38" height="50" rx="8" fill="#fff" stroke="var(--dark)" stroke-width="4.5"/>
+    <g stroke="var(--dark)" stroke-width="3.2" stroke-linecap="round"><path d="M8 17h8M8 27h8M8 37h8M8 47h8"/></g>
+    <g stroke="var(--dark)" stroke-width="2.6" stroke-linecap="round" opacity=".55"><path d="M22 18h20M22 26h20M22 34h12"/></g>
+    <rect x="35" y="36" width="20" height="17" rx="4.5" fill="var(--accent)" stroke="#fff" stroke-width="2.4"/>
+    <path d="M39.5 36.5v-3.2a5.5 5.5 0 0 1 11 0v3.2" fill="none" stroke="var(--dark)" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="45" cy="44.5" r="2.4" fill="#fff"/>
+  </svg>`,
+
   // Calendario: marco oscuro, anillas, cuadrícula con dos «hechos» y un punto rojo
   calendario: `<svg viewBox="0 0 64 64" aria-hidden="true">
     <rect x="8" y="12" width="48" height="45" rx="10" fill="#fff" stroke="var(--dark)" stroke-width="4.5"/>

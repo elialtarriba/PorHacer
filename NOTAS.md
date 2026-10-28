@@ -109,3 +109,19 @@ Probó la V3 con su marido (rbielsa@gmail.com). Ella le había puesto en Persona
 ## V4.6 · Ratón y temas blancos
 - Las barras de pestañas (Configuración, columnas…) se pueden arrastrar con el ratón y mover con la rueda.
 - 11 temas nuevos con fondo blanco (Blanco y rojo, azul, celeste, verde, lima, rosa, lila, naranja, amarillo, marrón, negro). En Temas salen en dos grupos: «Con fondo blanco» y «Con fondo de color».
+
+## V4.7 · Avisos con sonido
+- Cada tarea puede tener 2 avisos (día y hora), con atajos «Dentro de 1 hora» y «Mañana a las 9». Son de quien los pone: a los demás del tablero no les suenan.
+- A la hora suena una campanita y sale una ventana bonita: Cerrar, 😴 10 min (posponer) o Ir a la tarea. Si el navegador está en otra pestaña, también sale una notificación (si se da permiso).
+- Suena mientras la app esté abierta; si se abre más tarde (hasta 12 h), avisa igualmente indicando «Era para…».
+- La tarjeta muestra 🔔 con el próximo aviso; el historial apunta avisos puestos, quitados y pospuestos.
+- V4.8: las tareas nuevas van por defecto a «Nueva tarea» (antes «En curso»).
+- V4.9: «Al calendario del móvil» lleva los avisos con sonido como alarmas del calendario (suenan aunque la app esté cerrada). Si la tarea no tiene fechas pero sí aviso, el evento se pone ese día.
+
+## V4.10 · Bloc de notas secreto
+- Botón 📒 en el calendario. Contraseña en Configuración → 🔒 Bloc (solo puntos, sin copiar ni pegar).
+- Notas solo en este aparato, cifradas (AES-GCM) con la contraseña. Exportar/importar copia cifrada. Si se olvida la contraseña no se recupera.
+- Hojas con pestañas: añadir, borrar, nombre, color de hoja y color de pestaña. Negrita/normal, listas ☑ (se marcan), • y 1., subrayado en 7 colores pastel.
+- V4.11: fotos en el bloc (📷, arrastrar o pegar). Se aligeran (máx. 1000 px, JPEG) y entran pequeñas (140 px); al tocarlas sale un tirador para hacerlas grandes o pequeñas y una 🗑. El bloc pasa a guardarse en IndexedDB (cabe mucho más); lo de antes se traspasa solo.
+- V4.12: imprimir una hoja del bloc (menú ⋯ → 🖨): elegir hoja, con el color del papel o en blanco, y con o sin el nombre arriba.
+- V4.13: PDF de una hoja del bloc (⋯ → Imprimir o PDF; con o sin color). Barra de 10 iconos (✅ ❤️ ❌ ❗️ ❓ 🔴 🟢 🔵 🟡 🟠) en el bloc y en las notas de la tarea; las notas de la tarea admiten negrita (se ve en la tarjeta). Librerías html2canvas.min.js y jspdf.min.js (MIT) incluidas.

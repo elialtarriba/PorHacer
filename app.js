@@ -1,6 +1,6 @@
 /* PorHacer · app principal: tablero de columnas, tareas y editor */
 
-const VERSION = 'V4.6';
+const VERSION = 'V4.13';
 const $ = (s, r=document) => r.querySelector(s);
 const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -184,6 +184,7 @@ function htmlTarjeta(t){
     else if(t.fin === h && !col.hecha) meta += `<span class="tag hoy">☀️ Hoy</span>`;
     else meta += `<span class="tag">📅 ${txt}</span>`;
   }
+  const av = Avisos.proximo(t); if(av && !col.hecha) meta += `<span class="tag aviso" title="Aviso con sonido">🔔 ${Avisos.txt(av.f)}</span>`;
   if(subs.length) meta += `<span class="tag">☑️ ${hechos}/${subs.length}</span>`;
   if(t.nf) meta += `<span class="tag">📷 ${t.nf}</span>`;
   if(t.nv) meta += `<span class="tag">🎬 ${t.nv}</span>`;
@@ -195,7 +196,7 @@ function htmlTarjeta(t){
   return `<article class="tarjeta ${col.hecha?'hecha':''}" data-id="${t.id}" style="${fondo?'--tc:'+fondo+';':''}--tb:${bordeDe(t)}">
     <button class="t-check" aria-label="Marcar como acabada">${col.hecha?'✓':''}</button>
     <div class="t-tit">${esc(t.titulo || 'Sin título')}</div>
-    ${t.notas ? `<div class="t-nota">${esc(t.notas)}</div>` : ''}
+    ${t.notas ? `<div class="t-nota">${notaHtml(t)}</div>` : ''}
     ${meta ? `<div class="t-meta">${meta}</div>` : ''}
     ${subs.length ? `<div class="t-prog"><i style="width:${Math.round(hechos/subs.length*100)}%"></i></div>` : ''}
   </article>`;
@@ -233,6 +234,50 @@ async function contarMedia(){
   a.forEach(x => { if(idx[x.tareaId]) idx[x.tareaId].na++; });
 }
 function limpiaTarea(t){ const c = {...t}; delete c.nf; delete c.nv; delete c.na; return c; }
+/* ---------- Notas con negrita e iconos ---------- */
+const ICONOS_NOTA = ['✅','❤️','❌','❗️','❓','🔴','🟢','🔵','🟡','🟠'];
+// Del cuadro de notas saca: el texto normal (para buscar, emails…) y un HTML limpio que solo tiene <b>
+function ricoLimpio(raiz){
+  let html = '', txt = '';
+  const bloque = n => /^(DIV|P|LI|UL|OL|H[1-6])$/.test(n.nodeName);
+  const salto = () => { if(txt && !txt.endsWith('\n')){ html += '\n'; txt += '\n'; } };
+  const walk = (n, neg) => {
+    for(const c of n.childNodes){
+      if(c.nodeType === 3){ const v = c.data.replace(/\u00a0/g, ' '); if(!v) continue; html += neg ? '<b>' + esc(v) + '</b>' : esc(v); txt += v; }
+      else if(c.nodeType === 1){
+        if(c.nodeName === 'BR'){ html += '\n'; txt += '\n'; continue; }
+        const fw = (c.style && c.style.fontWeight) || '';
+        const b = neg || /^(B|STRONG)$/.test(c.nodeName) || fw === 'bold' || +fw >= 600;
+        if(bloque(c)) salto(); walk(c, b); if(bloque(c)) salto();
+      }
+    }
+  };
+  walk(raiz, false);
+  html = html.replace(/<\/b><b>/g, '').replace(/\s+$/, ''); txt = txt.replace(/\s+$/, '');
+  return { html, txt };
+}
+function ricoDesde(guardado){ const d = new DOMParser().parseFromString('<div>' + guardado + '</div>', 'text/html'); return ricoLimpio(d.body.firstChild); }
+function notaHtml(t){ return t.notasHtml ? ricoDesde(t.notasHtml).html : esc(t.notas || ''); }
+let _rangoNota = null;
+function iniciarNotasRicas(){
+  const el = $('#edNotas'), barra = $('#edNotasBarra');
+  barra.innerHTML = '<button type="button" data-n="b" title="Negrita"><b>B</b></button><span class="bloc-sep"></span>' + ICONOS_NOTA.map(i => `<button type="button" data-i="${i}">${i}</button>`).join('');
+  document.addEventListener('selectionchange', () => { const s = getSelection(); if(s.rangeCount && el.contains(s.anchorNode)){ _rangoNota = s.getRangeAt(0).cloneRange(); try{ $('[data-n=b]', barra).classList.toggle('on', document.queryCommandState('bold')); }catch(e){} } });
+  ['mousedown', 'pointerdown'].forEach(ev => barra.addEventListener(ev, e => { if(e.target.closest('button')) e.preventDefault(); }));
+  barra.addEventListener('click', e => {
+    const b = e.target.closest('button'); if(!b) return;
+    el.focus();
+    const s = getSelection();
+    if(_rangoNota && el.contains(_rangoNota.startContainer)){ s.removeAllRanges(); s.addRange(_rangoNota); }
+    else { const r = document.createRange(); r.selectNodeContents(el); r.collapse(false); s.removeAllRanges(); s.addRange(r); }
+    try{ document.execCommand('styleWithCSS', false, false); }catch(_){}
+    if(b.dataset.n === 'b') document.execCommand('bold');
+    else if(b.dataset.i) document.execCommand('insertText', false, b.dataset.i);
+    try{ $('[data-n=b]', barra).classList.toggle('on', document.queryCommandState('bold')); }catch(_){}
+  });
+  // pegar: solo texto
+  el.addEventListener('paste', e => { e.preventDefault(); document.execCommand('insertText', false, (e.clipboardData || window.clipboardData).getData('text/plain')); });
+}
 /* ---------- Historial: todo lo que le pasa a una tarea ---------- */
 function quienSoy(){ return (typeof Nube !== 'undefined' && Nube.user) ? Nube.nombreYo() : ''; }
 function anotar(t, x){ if(!t || !x) return; t.hist = (Array.isArray(t.hist) ? t.hist : []).concat({ f:Date.now(), q:quienSoy(), x }).slice(-300); }
@@ -241,13 +286,14 @@ function cambiosTarea(a, b){
   const c = [], nomCol = id => colDe(id).nombre, nomP = id => { const p = persona(id); return p ? nombreP(p) : 'nadie'; };
   const corta = x => { x = (x || '').trim(); return x.length > 40 ? x.slice(0, 40) + '…' : x; };
   if((a.titulo||'') !== (b.titulo||'')) c.push('✏️ Título: «' + corta(a.titulo) + '» → «' + corta(b.titulo) + '»');
-  if((a.notas||'') !== (b.notas||'')) c.push('📝 Notas cambiadas');
+  if((a.notas||'') !== (b.notas||'') || (a.notasHtml||'') !== (b.notasHtml||'')) c.push('📝 Notas cambiadas');
   if(a.colId !== b.colId) c.push((colDe(b.colId).hecha ? '✅ ' : '➡️ ') + 'De «' + nomCol(a.colId) + '» a «' + nomCol(b.colId) + '»');
   if((a.ini||'') !== (b.ini||'')) c.push('📅 Inicio: ' + fechaCorta(a.ini) + ' → ' + fechaCorta(b.ini));
   if((a.fin||'') !== (b.fin||'')) c.push('🏁 Fin: ' + fechaCorta(a.fin) + ' → ' + fechaCorta(b.fin));
   if((a.personaId||'') !== (b.personaId||'')) c.push('👤 ' + (b.personaId ? 'Asignada a ' + nomP(b.personaId) : 'Ya no está asignada') + (a.personaId ? ' (antes: ' + nomP(a.personaId) + ')' : ''));
   if((a.prio||0) !== (b.prio||0)) c.push('⚑ Prioridad: ' + ['sin','baja','media','alta'][a.prio||0] + ' → ' + ['sin','baja','media','alta'][b.prio||0]);
   if((a.color||'') !== (b.color||'')) c.push('🎨 Color cambiado');
+  c.push(...Avisos.cambios(a, b));
   const sa = a.subs || [], sb = b.subs || [], txt = l => l.map(x => x.t);
   sb.filter(x => !txt(sa).includes(x.t)).forEach(x => c.push('➕ Paso nuevo: «' + corta(x.t) + '»'));
   sa.filter(x => !txt(sb).includes(x.t)).forEach(x => c.push('➖ Paso quitado: «' + corta(x.t) + '»'));
@@ -497,16 +543,17 @@ async function abrirEditor(id, colId){
   let t;
   if(id){ t = structuredClone(limpiaTarea(App.tareas.find(x => x.id === id))); App.ed = { t, nueva:false, mediaNueva:false }; }
   else {
-    const primera = (colId && colDe(colId)) || columnas().find(c => c.id === 'curso') || columnas().find(c => c.visible && !c.hecha) || columnas()[0];
+    const primera = (colId && colDe(colId)) || columnas().find(c => c.id === 'nueva') || columnas().find(c => c.visible && !c.hecha) || columnas()[0];
     t = { id:nuevoId('t'), titulo:'', notas:'', colId:primera.id, color:'', prio:0, ini:'', fin:'', personaId:'', email:false, subs:[], creada:Date.now(), orden:-Date.now() };
     App.ed = { t, nueva:true, mediaNueva:false };
   }
   $('#edCab').textContent = App.ed.nueva ? 'Nueva tarea' : 'Editar tarea';
-  $('#edTitulo').value = t.titulo; $('#edNotas').value = t.notas;
+  $('#edTitulo').value = t.titulo; $('#edNotas').innerHTML = notaHtml(t); _rangoNota = null;
   $('#edCol').innerHTML = columnas().map(c => `<option value="${c.id}" ${c.id===t.colId?'selected':''}>${esc(c.nombre)}${c.visible?'':' (oculta)'}</option>`).join('');
   selColorTarea = selColor($('#edColor'), t.color, PALETA_TAREA, v => { App.ed.t.color = v; });
   $$('#edPrio button').forEach(b => b.classList.toggle('on', +b.dataset.p === (t.prio||0)));
   $('#edIni').value = t.ini || ''; $('#edFin').value = t.fin || '';
+  Avisos.pintarEditor(t);
   $('#edPersona').innerHTML = opcionesPersonas(t.personaId);
   $('#edEmail').checked = false;
   pintarSubs(); pintarDur(); pintarEmail(); pintarPunto();
@@ -521,7 +568,7 @@ async function abrirEditor(id, colId){
 }
 function pintarPunto(){ $('#edPunto').style.background = colDe($('#edCol').value).color; }
 // Las fechas vacías se ven como «Sin fecha» (Safari, si no, enseña la de hoy en gris)
-function marcarFechas(){ for(const id of ['edIni','edFin']){ const i = $('#'+id); i.parentNode.classList.toggle('vacia', !i.value); } }
+function marcarFechas(){ for(const id of ['edIni','edFin']){ const i = $('#'+id); i.parentNode.classList.toggle('vacia', !i.value); } Avisos.marcar(); }
 function pintarDur(){
   marcarFechas();
   const a = $('#edIni').value, b = $('#edFin').value, el = $('#edDur');
@@ -641,7 +688,8 @@ async function subirVideo(file){
 function leerEditor(){
   const t = App.ed.t;
   t.titulo = $('#edTitulo').value.trim();
-  t.notas = $('#edNotas').value.trim();
+  const rn = ricoLimpio($('#edNotas')); t.notas = rn.txt.trim();
+  if(/<b>/.test(rn.html)) t.notasHtml = rn.html.trim(); else delete t.notasHtml;
   if(!t.titulo && t.notas) t.titulo = t.notas.split('\n')[0].slice(0, 80);
   t.colId = $('#edCol').value;
   t.color = selColorTarea.valor;
@@ -649,6 +697,7 @@ function leerEditor(){
   t.ini = $('#edIni').value; t.fin = $('#edFin').value;
   if(t.ini && t.fin && t.fin < t.ini){ const x = t.ini; t.ini = t.fin; t.fin = x; }
   t.personaId = $('#edPersona').value;
+  Avisos.leerEditor(t, App.tareas.find(x => x.id === t.id));
   return t;
 }
 
@@ -662,7 +711,7 @@ async function guardarEditor(){
     t.orden = -Date.now();
   }
   const enviar = $('#edEmail').checked;
-  if(App.ed.nueva) anotar(t, '✨ Creada en «' + colDe(t.colId).nombre + '»');
+  if(App.ed.nueva){ anotar(t, '✨ Creada en «' + colDe(t.colId).nombre + '»'); Avisos.cambios({}, t).forEach(x => anotar(t, x)); }
   else if(previa) cambiosTarea(previa, t).forEach(x => anotar(t, x));
   (App.ed.pend || []).forEach(x => anotar(t, x));
   if(enviar){ const p = persona(t.personaId); anotar(t, '📧 Email enviado' + (p ? ' a ' + nombreP(p) : '')); }
@@ -731,7 +780,7 @@ async function borrarTarea(id){
 async function duplicarTarea(){
   const o = leerEditor();
   const c = structuredClone(limpiaTarea(o));
-  c.id = nuevoId('t'); c.titulo = o.titulo + ' (copia)'; c.creada = Date.now(); c.orden = -Date.now(); delete c.emailEnviado; delete c.recordado; c.hist = []; anotar(c, '⧉ Creada como copia de «' + o.titulo + '»');
+  c.id = nuevoId('t'); c.titulo = o.titulo + ' (copia)'; c.creada = Date.now(); c.orden = -Date.now(); delete c.emailEnviado; delete c.recordado; delete c.avisos; c.hist = []; anotar(c, '⧉ Creada como copia de «' + o.titulo + '»');
   for(const tipo of ['fotos','videos','audios']){
     const l = (await DB.deTarea(tipo, o.id)).filter(x => x.blob);
     if(l.length) await DB.ponerVarios(tipo, l.map(x => ({...x, id:nuevoId(tipo[0]), tareaId:c.id})));
@@ -792,14 +841,20 @@ function descargar(blob, nombre){
   document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
 }
 function exportarIcs(){
-  const t = leerEditor(), r = rango(t);
-  if(!r){ toast('📅 Pon antes una fecha'); return; }
+  const t = leerEditor();
+  // los avisos con sonido van como alarmas del calendario del móvil (suenan aunque la app esté cerrada)
+  const avs = Avisos.mios(t).filter(a => a.f && !a.sonado && new Date(a.f).getTime() > Date.now()).sort((a, b) => a.f.localeCompare(b.f));
+  const r = rango(t) || (avs.length ? [avs[0].f.slice(0, 10), avs[0].f.slice(0, 10)] : null);
+  if(!r){ toast('📅 Pon antes una fecha o un aviso'); return; }
+  const utc = f => new Date(f).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+  const alarmas = avs.flatMap(a => ['BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + String(t.titulo || 'PorHacer').replace(/[,;\\]/g, ' ').replace(/\n/g, ' '), 'TRIGGER;VALUE=DATE-TIME:' + utc(a.f), 'END:VALARM']);
   const f = s => s.replace(/-/g,'');
   const e = s => String(s||'').replace(/\\/g,'\\\\').replace(/\n/g,'\\n').replace(/[,;]/g, m => '\\'+m);
   const ics = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//PorHacer//ES','CALSCALE:GREGORIAN','BEGIN:VEVENT',
     'UID:'+t.id+'@porhacer','DTSTAMP:'+new Date().toISOString().replace(/[-:]/g,'').split('.')[0]+'Z',
     'DTSTART;VALUE=DATE:'+f(r[0]),'DTEND;VALUE=DATE:'+f(sumaDias(r[1],1)),
-    'SUMMARY:'+e(t.titulo),'DESCRIPTION:'+e(t.notas),'END:VEVENT','END:VCALENDAR'].join('\r\n');
+    'SUMMARY:'+e(t.titulo),'DESCRIPTION:'+e(t.notas),...alarmas,'END:VEVENT','END:VCALENDAR'].join('\r\n');
+  if(avs.length) toast('📅 Con ' + avs.length + (avs.length > 1 ? ' avisos' : ' aviso') + ' que sonarán en el calendario del móvil');
   descargar(new Blob([ics], { type:'text/calendar' }), (t.titulo||'tarea').replace(/[^\w\- áéíóúñç]/gi,'').slice(0,40)+'.ics');
 }
 
@@ -854,6 +909,12 @@ function eventos(){
   $$('#edPrio button').forEach(b => b.onclick = () => { $$('#edPrio button').forEach(x => x.classList.remove('on')); b.classList.add('on'); });
   $('#edCol').onchange = pintarPunto;
   $('#edIni').onchange = $('#edFin').onchange = pintarDur;
+  $$('#edAviso1, #edAviso2').forEach(i => { i.addEventListener('input', () => Avisos.marcar()); i.addEventListener('change', () => { Avisos.marcar(); if(i.value){ Avisos.pedirPermiso(); Fiesta.despertar(); } $('#edAvisoInfo' + i.id.slice(-1)).textContent = ''; }); });
+  $$('.aviso-rapido [data-av]').forEach(b => b.onclick = e => { e.preventDefault();
+    const i = !$('#edAviso1').value ? $('#edAviso1') : !$('#edAviso2').value ? $('#edAviso2') : null;
+    if(!i){ toast('Ya tienes los 2 avisos. Quita uno con ✕'); return; }
+    const d = new Date(); if(b.dataset.av === '1h'){ d.setMinutes(d.getMinutes() + 60); } else { d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0); }
+    i.value = iso(d) + 'T' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); i.dispatchEvent(new Event('change')); });
   $$('#edIni, #edFin').forEach(i => i.addEventListener('input', pintarDur));
   $$('.fecha-x').forEach(b => b.onclick = e => { e.preventDefault(); $('#'+b.dataset.x).value = ''; pintarDur(); });
   $('#edPersona').onchange = pintarEmail;
@@ -918,6 +979,9 @@ async function iniciar(){
   }
   eventos(); iniciarArrastre(); fechaCabecera();
   Cal.iniciar();
+  Avisos.iniciar();
+  Bloc.iniciar();
+  iniciarNotasRicas();
   pintarTodo();
   setTimeout(() => $('#splash').classList.add('fuera'), 900);
   setTimeout(() => document.body.classList.add('ya'), 1800);
