@@ -529,13 +529,29 @@ const Nube = {
     const el = $('#nubeEstado'); if(!el) return;
     if(!this.configurada()){ el.hidden = true; return; }
     el.hidden = false;
-    let ico = '☁︎', tit = 'Sincronizado con la nube', off = false;
-    if(forzado){ ico = forzado; tit = 'Conectando…'; }
-    else if(!this.activa){ tit = 'Sin conectar (toca para entrar)'; off = true; }
-    else if(!this.online){ tit = 'Sin internet: se guardará al volver'; off = true; }
-    else if(this.subiendo){ ico = '⬆︎' + this.subiendo; tit = 'Subiendo fotos, vídeos o audios…'; }
-    el.classList.toggle('off', off);
-    el.textContent = ico; el.title = tit;
+    const nube = '<path d="M7 18.5h10.2a4.3 4.3 0 0 0 .6-8.56A5.8 5.8 0 0 0 6.6 9.1 4.7 4.7 0 0 0 7 18.5z"/>';
+    const svg = extra => `<svg viewBox="0 0 24 24" aria-hidden="true">${nube}${extra}</svg>`;
+    let ico = svg('<path class="n2" d="M9.2 13.6l2 2 3.8-4"/>'), txt = 'Al día', tit = 'Sincronizado con la nube', cls = '';
+    if(forzado){ ico = svg('<path class="n2" d="M12 11.2v.01M9.5 13.3h.01M14.5 13.3h.01"/>'); txt = 'Conectando'; tit = 'Conectando…'; cls = 'off'; }
+    else if(!this.activa){ ico = svg('<path class="n2" d="M5 4l14 16"/>'); txt = 'Entrar'; tit = 'Sin conectar (toca para entrar)'; cls = 'off'; }
+    else if(!this.online){ ico = svg('<path class="n2" d="M5 4l14 16"/>'); txt = 'Sin red'; tit = 'Sin internet: se guardará al volver'; cls = 'aviso'; }
+    else if(this.subiendo){ ico = svg('<path class="n2" d="M12 16.5v-6M9.3 12.8 12 10.1l2.7 2.7"/>'); txt = 'Subiendo ' + this.subiendo; tit = 'Subiendo fotos, vídeos o audios…'; cls = 'sube'; }
+    el.className = 'nube-estado ' + cls;
+    el.innerHTML = ico + '<span>' + txt + '</span>'; el.title = tit; el.setAttribute('aria-label', tit);
+  },
+  // Al tocar la nubecita: qué significa y a dónde ir
+  explicarEstado(){
+    const tb = this.tablero, gente = tb ? new Set([tb.duenoEmail, ...this.aceptados(tb)].filter(Boolean).map(e => e.toLowerCase())).size : 1;
+    const est = !this.activa ? ['😴', 'Sin conectar', 'Ahora mismo no estás conectada a la nube.']
+      : !this.online ? ['📴', 'Sin internet', 'Puedes seguir trabajando: todo se guarda en el móvil y se subirá solo cuando vuelva internet.']
+      : this.subiendo ? ['⬆️', 'Subiendo…', 'Se están subiendo ' + this.subiendo + ' fotos, vídeos o audios. Puedes seguir usando la app.']
+      : ['✅', 'Todo al día', 'Todo lo que haces se guarda en la nube al momento' + (gente > 1 ? ' y lo ven las ' + gente + ' personas de este tablero.' : '.')];
+    popup({ tit:'☁️ La nube',
+      html:`<div class="nube-info"><div class="ni-ico">${est[0]}</div><b>${est[1]}</b><p>${esc(est[2])}</p>
+        ${tb ? `<p class="ni-tab">📋 Tablero: <b>${esc(this.nombreTablero(tb))}</b></p>` : ''}
+        <p class="ni-cuenta">👤 ${esc(this.nombreYo())} · ${esc(this.email())}</p></div>`,
+      botones:[{ txt:'📋 Tableros', val:'tab' }, { txt:'Vale', cls:'btn-pri', val:null }] })
+      .then(v => { if(v === 'tab'){ Ajustes.abrir(); Ajustes.tab('tableros'); } });
   },
   pantalla(html, alAbrir){
     $('#nubeCuerpo').innerHTML = html + `<div class="nube-ver">PorHacer ${VERSION}</div>`;

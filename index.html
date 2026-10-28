@@ -10,9 +10,9 @@
 <meta name="theme-color" content="#eeeff1">
 <title>PorHacer</title>
 <link rel="icon" href="logo.png" type="image/png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png?v=42">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=43">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="estilos.css?v=42">
+<link rel="stylesheet" href="estilos.css?v=43">
 </head>
 <body>
 
@@ -30,18 +30,22 @@
     <div class="marca">
       <img src="logo.png" alt="" class="marca-logo">
       <div class="marca-txt">
-        <h1>Por<span>Hacer</span></h1>
+        <div class="marca-fila">
+          <h1>Por<span>Hacer</span></h1>
+        </div>
         <small id="hoyTxt"></small>
         <button class="tab-pill" id="btnTablero" hidden></button>
       </div>
-      <div class="insignias">
-        <span class="ver" id="verTxt">V4.2</span>
-        <button class="nube-estado off" id="nubeEstado" hidden title="Nube">☁︎</button>
-      </div>
     </div>
-    <div class="top-btns">
-      <button class="ibtn" id="btnCal" title="Calendario" aria-label="Calendario"></button>
-      <button class="ibtn" id="btnAjustes" title="Configuración" aria-label="Configuración"></button>
+    <div class="top-der">
+      <div class="top-btns">
+        <button class="ibtn" id="btnCal" title="Calendario" aria-label="Calendario"></button>
+        <button class="ibtn" id="btnAjustes" title="Configuración" aria-label="Configuración"></button>
+      </div>
+      <div class="insignias">
+            <span class="ver" id="verTxt">V4.3</span>
+            <button class="nube-estado off" id="nubeEstado" hidden title="Nube" aria-label="Nube"></button>
+          </div>
     </div>
   </header>
 
@@ -164,7 +168,6 @@
         <div class="ed-extra">
           <button class="mini-btn" id="edIcs">📅 Al calendario del móvil</button>
           <button class="mini-btn" id="edDup">⧉ Duplicar</button>
-          <button class="mini-btn peligro" id="edBorrar">🗑 Borrar</button>
         </div>
         <div class="ed-tablero" id="edTabFila" hidden>
           <label class="lbl">📋 Tablero de esta tarea
@@ -172,7 +175,10 @@
           </label>
           <p class="aj-ayuda" style="margin-top:4px">Elige otro tablero para moverla allí, con sus fotos, vídeos y audios.</p>
         </div>
-        <div class="ed-fechas" id="edMeta"></div>
+        <div class="ed-hist" id="edMeta"></div>
+        <div class="ed-borrar" id="edBorrarFila">
+          <button class="btn-borrar-tarea" id="edBorrar">🗑 Borrar esta tarea</button>
+        </div>
       </div>
 
       <!-- Pestaña fotos -->
@@ -277,21 +283,21 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="iconos.js?v=42"></script>
-<script src="temas.js?v=42"></script>
-<script src="db.js?v=42"></script>
-<script src="firebase-config.js?v=42"></script>
-<script src="email-config.js?v=42"></script>
-<script src="correo.js?v=42"></script>
-<script src="audio.js?v=42"></script>
-<script src="fiesta.js?v=42"></script>
-<script src="nube.js?v=42"></script>
-<script src="fotos.js?v=42"></script>
-<script src="videos.js?v=42"></script>
-<script src="voz.js?v=42"></script>
-<script src="calendario.js?v=42"></script>
-<script src="ajustes.js?v=42"></script>
-<script src="copias.js?v=42"></script>
-<script src="app.js?v=42"></script>
+<script src="iconos.js?v=43"></script>
+<script src="temas.js?v=43"></script>
+<script src="db.js?v=43"></script>
+<script src="firebase-config.js?v=43"></script>
+<script src="email-config.js?v=43"></script>
+<script src="correo.js?v=43"></script>
+<script src="audio.js?v=43"></script>
+<script src="fiesta.js?v=43"></script>
+<script src="nube.js?v=43"></script>
+<script src="fotos.js?v=43"></script>
+<script src="videos.js?v=43"></script>
+<script src="voz.js?v=43"></script>
+<script src="calendario.js?v=43"></script>
+<script src="ajustes.js?v=43"></script>
+<script src="copias.js?v=43"></script>
+<script src="app.js?v=43"></script>
 </body>
 </html>

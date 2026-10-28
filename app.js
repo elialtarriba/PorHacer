@@ -1,6 +1,6 @@
 /* PorHacer · app principal: tablero de columnas, tareas y editor */
 
-const VERSION = 'V4.2';
+const VERSION = 'V4.3';
 const $ = (s, r=document) => r.querySelector(s);
 const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -58,7 +58,7 @@ function toast(txt, accion, fn, ms=3200){
 }
 function popup({ tit, html, botones, alAbrir }){
   return new Promise(ok => {
-    $('#popTit').textContent = tit || '';
+    $('#popTit').textContent = tit || ''; $('#popTit').hidden = !tit;
     $('#popCuerpo').innerHTML = html || '';
     const bx = $('#popBtns'); bx.innerHTML = '';
     (botones || [{txt:'Vale', cls:'btn-pri', val:true}]).forEach(b => {
@@ -212,6 +212,64 @@ async function contarMedia(){
   a.forEach(x => { if(idx[x.tareaId]) idx[x.tareaId].na++; });
 }
 function limpiaTarea(t){ const c = {...t}; delete c.nf; delete c.nv; delete c.na; return c; }
+/* ---------- Historial: todo lo que le pasa a una tarea ---------- */
+function quienSoy(){ return (typeof Nube !== 'undefined' && Nube.user) ? Nube.nombreYo() : ''; }
+function anotar(t, x){ if(!t || !x) return; t.hist = (Array.isArray(t.hist) ? t.hist : []).concat({ f:Date.now(), q:quienSoy(), x }).slice(-300); }
+const fechaCorta = v => v ? new Date(v + 'T12:00').toLocaleDateString('es-ES', { day:'numeric', month:'short', year:'numeric' }) : 'sin fecha';
+function cambiosTarea(a, b){
+  const c = [], nomCol = id => colDe(id).nombre, nomP = id => { const p = persona(id); return p ? nombreP(p) : 'nadie'; };
+  const corta = x => { x = (x || '').trim(); return x.length > 40 ? x.slice(0, 40) + '…' : x; };
+  if((a.titulo||'') !== (b.titulo||'')) c.push('✏️ Título: «' + corta(a.titulo) + '» → «' + corta(b.titulo) + '»');
+  if((a.notas||'') !== (b.notas||'')) c.push('📝 Notas cambiadas');
+  if(a.colId !== b.colId) c.push((colDe(b.colId).hecha ? '✅ ' : '➡️ ') + 'De «' + nomCol(a.colId) + '» a «' + nomCol(b.colId) + '»');
+  if((a.ini||'') !== (b.ini||'')) c.push('📅 Inicio: ' + fechaCorta(a.ini) + ' → ' + fechaCorta(b.ini));
+  if((a.fin||'') !== (b.fin||'')) c.push('🏁 Fin: ' + fechaCorta(a.fin) + ' → ' + fechaCorta(b.fin));
+  if((a.personaId||'') !== (b.personaId||'')) c.push('👤 ' + (b.personaId ? 'Asignada a ' + nomP(b.personaId) : 'Ya no está asignada') + (a.personaId ? ' (antes: ' + nomP(a.personaId) + ')' : ''));
+  if((a.prio||0) !== (b.prio||0)) c.push('⚑ Prioridad: ' + ['sin','baja','media','alta'][a.prio||0] + ' → ' + ['sin','baja','media','alta'][b.prio||0]);
+  if((a.color||'') !== (b.color||'')) c.push('🎨 Color cambiado');
+  const sa = a.subs || [], sb = b.subs || [], txt = l => l.map(x => x.t);
+  sb.filter(x => !txt(sa).includes(x.t)).forEach(x => c.push('➕ Paso nuevo: «' + corta(x.t) + '»'));
+  sa.filter(x => !txt(sb).includes(x.t)).forEach(x => c.push('➖ Paso quitado: «' + corta(x.t) + '»'));
+  sb.forEach(x => { const y = sa.find(z => z.t === x.t); if(y && !!y.ok !== !!x.ok) c.push((x.ok ? '☑️ Paso hecho: «' : '⬜ Paso por hacer otra vez: «') + corta(x.t) + '»'); });
+  return c;
+}
+// Lo que se apunta mientras la tarea está abierta (fotos, audios, recordatorios…)
+function apuntar(x){ if(App.ed) (App.ed.pend = App.ed.pend || []).push(x); }
+function lineaHist(h){
+  const d = new Date(h.f);
+  return `<li><time>${d.toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'})} · ${d.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}</time><span>${esc(h.x)}</span>${h.q ? `<small>${esc(h.q)}</small>` : ''}</li>`;
+}
+// Historial completo (las tareas antiguas, sin historial, muestran lo que se sabe)
+function historialDe(t){
+  const l = Array.isArray(t.hist) ? t.hist.slice() : [];
+  if(!l.some(h => /^✨/.test(h.x)) && t.creada) l.unshift({ f:t.creada, x:'✨ Creada', q:'' });
+  if(!l.length || l.length === 1){
+    if(t.emailEnviado && !l.some(h => /^📧/.test(h.x))) l.push({ f:t.emailEnviado, x:'📧 Email enviado', q:'' });
+    if(t.recordado && !l.some(h => /^🔔/.test(h.x))) l.push({ f:t.recordado, x:'🔔 Recordatorio enviado', q:'' });
+    if(t.actualizada && t.actualizada - (t.creada||0) > 60000) l.push({ f:t.actualizada, x:'💾 Cambiada', q:'' });
+  }
+  return l.sort((a, b) => a.f - b.f);
+}
+function pintarHistorial(){
+  const caja = $('#edMeta');
+  if(!App.ed || App.ed.nueva){ caja.innerHTML = ''; caja.hidden = true; return; }
+  const l = historialDe(App.ed.t).concat((App.ed.pend || []).map(x => ({ f:Date.now(), x, q:quienSoy(), nuevo:true })));
+  caja.hidden = false;
+  const ult = l.slice(-3).reverse();
+  caja.innerHTML = `<div class="hist-cab"><b>📜 Historial</b><small>${l.length} ${l.length === 1 ? 'movimiento' : 'movimientos'}</small></div>
+    <ul class="hist-lista">${ult.map(lineaHist).join('')}</ul>
+    <button class="mini-btn hist-ver" id="edHistVer">📜 Ver todo el historial</button>`;
+  $('#edHistVer').onclick = () => verHistorial(App.ed.t, l);
+}
+function verHistorial(t, l){
+  l = l || historialDe(t);
+  const dias = {};
+  l.slice().reverse().forEach(h => { const k = new Date(h.f).toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'}); (dias[k] = dias[k] || []).push(h); });
+  popup({ tit:'📜 Historial de la tarea',
+    html:`<p class="hist-tarea"><i style="background:${esc(t.color || colDe(t.colId).color)}"></i>${esc(t.titulo || 'Sin título')}</p>
+      <div class="hist-todo">${Object.entries(dias).map(([k, hs]) => `<div class="hist-dia">${esc(k)}</div><ul class="hist-lista">${hs.map(h => lineaHist(h).replace(/<time>[^·]*· /, '<time>')).join('')}</ul>`).join('')}</div>`,
+    botones:[{ txt:'Cerrar', cls:'btn-pri', val:null }] });
+}
 async function guardarTarea(t){ t.actualizada = Date.now(); await DB.poner('tareas', limpiaTarea(t)); }
 
 // Marcar como acabada con el cuadradito de la tarjeta (y deshacer)
@@ -220,6 +278,7 @@ async function alternarHecha(id){
   const col = colDe(t.colId);
   if(col.hecha){ t.colId = (t.colPrev && columnas().some(c=>c.id===t.colPrev && !c.hecha)) ? t.colPrev : columnas()[0].id; delete t.hechaEn; }
   else { t.colPrev = t.colId; t.colId = colHecha().id; t.hechaEn = Date.now(); Fiesta.celebrar(t); }
+  anotar(t, colDe(t.colId).hecha ? '✅ Marcada como acabada' : '↩️ Vuelve a «' + colDe(t.colId).nombre + '»');
   t.orden = -Date.now();
   await guardarTarea(t); pintarTodo();
   if(!(colDe(t.colId).hecha && Fiesta.cfg().activa)) toast(colDe(t.colId).hecha ? '✅ ¡Tarea acabada!' : '↩️ Vuelve a «'+colDe(t.colId).nombre+'»');
@@ -270,9 +329,9 @@ async function verGente(tid){
       $$('[data-r]', c).forEach(b => b.onclick = () => { abrirFila(b.dataset.r); const f = $(`.gente-fila[data-i="${b.dataset.r}"]`, c); f && f.scrollIntoView({ block:'nearest', behavior:'smooth' }); });
       $$('[data-acc]', c).forEach(b => b.onclick = async () => {
         const q = gente[+b.closest('.gente-fila').dataset.i];
-        if(b.dataset.acc === 'asignar'){ t.personaId = q.id; await guardarTarea(t); pintarTodo(); fin(null); toast('📌 Asignada a ' + q.nombre); }
+        if(b.dataset.acc === 'asignar'){ t.personaId = q.id; anotar(t, '👤 Asignada a ' + q.nombre); await guardarTarea(t); pintarTodo(); fin(null); toast('📌 Asignada a ' + q.nombre); }
         if(b.dataset.acc === 'filtrar'){ App.filtro = 'p:' + q.id; pintarTodo(); fin(null); }
-        if(b.dataset.acc === 'recordar'){ fin(null); await contarMedia(); Correo.recordatorio(t); t.recordado = Date.now(); await guardarTarea(t); pintarTodo(); }
+        if(b.dataset.acc === 'recordar'){ fin(null); await contarMedia(); Correo.recordatorio(t); t.recordado = Date.now(); anotar(t, '🔔 Recordatorio enviado a ' + q.nombre); await guardarTarea(t); pintarTodo(); }
       });
       if(gente.length === 1) abrirFila(0);
     } });
@@ -341,6 +400,7 @@ function iniciarArrastre(){
       if(antes !== nueva){
         if(!colDe(antes).hecha) t.colPrev = antes;
         t.colId = nueva;
+        anotar(t, (colDe(nueva).hecha ? '✅ ' : '➡️ ') + 'De «' + colDe(antes).nombre + '» a «' + colDe(nueva).nombre + '»');
         if(colDe(nueva).hecha && !colDe(antes).hecha){ t.hechaEn = Date.now(); Fiesta.celebrar(t); }
         toast('Movida a «'+colDe(nueva).nombre+'»');
       }
@@ -429,16 +489,10 @@ async function abrirEditor(id, colId){
   $('#edPersona').innerHTML = opcionesPersonas(t.personaId);
   $('#edEmail').checked = false;
   pintarSubs(); pintarDur(); pintarEmail(); pintarPunto();
-  const m = [];
-  if(!App.ed.nueva){
-    m.push('Creada: '+new Date(t.creada).toLocaleString('es-ES',{dateStyle:'medium',timeStyle:'short'}));
-    if(t.actualizada) m.push('Cambiada: '+new Date(t.actualizada).toLocaleString('es-ES',{dateStyle:'medium',timeStyle:'short'}));
-    if(t.emailEnviado) m.push('📧 Email enviado: '+new Date(t.emailEnviado).toLocaleString('es-ES',{dateStyle:'medium',timeStyle:'short'}));
-    if(t.recordado) m.push('🔔 Último recordatorio: '+new Date(t.recordado).toLocaleString('es-ES',{dateStyle:'medium',timeStyle:'short'}));
-  }
-  $('#edMeta').innerHTML = m.join('<br>');
+  App.ed.pend = [];
+  pintarHistorial();
   pintarTableroTarea();
-  $('#edBorrar').style.display = $('#edDup').style.display = App.ed.nueva ? 'none' : '';
+  $('#edBorrarFila').hidden = App.ed.nueva; $('#edDup').style.display = App.ed.nueva ? 'none' : '';
   await contarEditor();
   tabEditor('tarea');
   abrir('editor');
@@ -517,7 +571,7 @@ async function pintarAudios(){
   $$('#listaAudios [data-cargar]').forEach(b => b.onclick = async () => { b.textContent = '⏳ Cargando…'; const o = await DB.uno('audios', b.dataset.cargar); if(o && o.blob){ const au = document.createElement('audio'); au.controls = true; au.src = urlDe(o.blob); b.replaceWith(au); au.play().catch(()=>{}); } else b.textContent = '⚠️ No se pudo cargar'; });
   $$('#listaAudios [data-borrar]').forEach(b => b.onclick = async () => {
     if(!await popConfirmar('¿Borrar la nota de audio?', 'No se podrá recuperar.', 'Borrar')) return;
-    await DB.borrar('audios', b.dataset.borrar); pintarAudios(); contarMedia().then(pintarTodo);
+    await DB.borrar('audios', b.dataset.borrar); apuntar('🗑 Nota de audio borrada'); pintarHistorial(); pintarAudios(); contarMedia().then(pintarTodo);
   });
 }
 function pintarMedia(tipo){ ({ fotos:pintarFotos, videos:pintarVideos, audios:pintarAudios })[tipo](); }
@@ -539,6 +593,7 @@ async function subirFotos(files){
   $('#fotosInfo').textContent = 'Aligerando fotos…';
   const r = await guardarFotos(Array.from(files), App.ed.t.id, App.ajustes.calidadFoto, (i,n) => $('#fotosInfo').textContent = `Aligerando foto ${i} de ${n}…`);
   await pintarFotos();
+  if(r.n){ apuntar('📷 ' + r.n + (r.n > 1 ? ' fotos añadidas' : ' foto añadida')); pintarHistorial(); }
   if(r.n) toast(`📷 ${r.n} foto${r.n>1?'s':''}: de ${tamTxt(r.antes)} a ${tamTxt(r.despues)}`);
 }
 async function subirVideo(file){
@@ -549,12 +604,13 @@ async function subirVideo(file){
   $('#vidProgBar').style.width = '0';
   try{
     const r = await guardarVideo(file, App.ed.t.id, App.ajustes.calidadVideo, p => { $('#vidProgBar').style.width = Math.round(p*100)+'%'; });
+    apuntar('🎬 Vídeo añadido'); pintarHistorial();
     toast(r.aligerado ? `🎬 Vídeo: de ${tamTxt(r.original)} a ${tamTxt(r.size)}` : '🎬 Vídeo guardado (ya era ligero)');
   }catch(e){
     if(e.message !== 'cancelado'){
       console.warn(e);
       const si = await popConfirmar('No se pudo aligerar', 'Este navegador no ha podido aligerar el vídeo. ¿Lo guardo tal cual ('+tamTxt(file.size)+')?', 'Guardar tal cual');
-      if(si){ await DB.poner('videos', { id:nuevoId('v'), tareaId:App.ed.t.id, blob:file, poster:null, size:file.size, original:file.size, tipo:file.type, nombre:file.name, fecha:Date.now() }); }
+      if(si){ apuntar('🎬 Vídeo añadido'); pintarHistorial(); await DB.poner('videos', { id:nuevoId('v'), tareaId:App.ed.t.id, blob:file, poster:null, size:file.size, original:file.size, tipo:file.type, nombre:file.name, fecha:Date.now() }); }
     } else toast('Vídeo cancelado');
   }
   caja.hidden = true;
@@ -585,6 +641,10 @@ async function guardarEditor(){
     t.orden = -Date.now();
   }
   const enviar = $('#edEmail').checked;
+  if(App.ed.nueva) anotar(t, '✨ Creada en «' + colDe(t.colId).nombre + '»');
+  else if(previa) cambiosTarea(previa, t).forEach(x => anotar(t, x));
+  (App.ed.pend || []).forEach(x => anotar(t, x));
+  if(enviar){ const p = persona(t.personaId); anotar(t, '📧 Email enviado' + (p ? ' a ' + nombreP(p) : '')); }
   if(enviar) t.emailEnviado = Date.now();
   if(App.ed.recordado) t.recordado = App.ed.recordado;
   await guardarTarea(t);
@@ -598,6 +658,10 @@ async function guardarEditor(){
 }
 async function cancelarEditor(){
   Voz.parar();
+  if(App.ed && !App.ed.nueva && (App.ed.pend || []).length){
+    const o = App.tareas.find(x => x.id === App.ed.t.id);
+    if(o){ App.ed.pend.forEach(x => anotar(o, x)); await guardarTarea(o); }
+  }
   if(App.ed && App.ed.nueva && App.ed.mediaNueva){
     for(const x of ['fotos','videos','audios']) await DB.borrarDeTarea(x, App.ed.t.id);
   }
@@ -605,25 +669,48 @@ async function cancelarEditor(){
   await contarMedia(); pintarTodo();
 }
 
-/* Borrar con «Deshacer» */
+/* Borrar (con una ventanita para confirmar y «Deshacer» unos segundos) */
 async function borrarTarea(id){
-  const t = App.tareas.find(x => x.id === id); if(!t) return;
-  const ok = await popConfirmar('¿Borrar la tarea?', '«'+(t.titulo||'Sin título')+'» se borrará'+(t.nf||t.nv||t.na ? ' con sus fotos, vídeos y audios' : '')+'. Tendrás unos segundos para deshacerlo.', 'Borrar');
+  const t = (App.ed && App.ed.t && App.ed.t.id === id && !App.ed.nueva) ? App.tareas.find(x => x.id === id) : App.tareas.find(x => x.id === id);
+  if(!t) return;
+  const n = { fotos:0, videos:0, audios:0 }; let bytes = 0;
+  for(const x of Object.keys(n)){ try{ const l = await DB.deTarea(x, id); n[x] = l.length; bytes += l.reduce((s, m) => s + (m.size || 0), 0); }catch(e){} }
+  const col = colDe(t.colId), color = t.color || col.color;
+  const trozos = [n.fotos && `📷 ${n.fotos} foto${n.fotos > 1 ? 's' : ''}`, n.videos && `🎬 ${n.videos} vídeo${n.videos > 1 ? 's' : ''}`, n.audios && `🎙️ ${n.audios} audio${n.audios > 1 ? 's' : ''}`].filter(Boolean);
+  const subs = (t.subs || []).length;
+  const ok = await popup({ tit:'',
+    html:`<div class="borrar-pop">
+      <div class="bp-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="bp-tapa" d="M4 6.5h16M9.5 6.5V4.8c0-.7.6-1.3 1.3-1.3h2.4c.7 0 1.3.6 1.3 1.3v1.7"/><path d="M6 6.5l.9 12.6c.1 1 .9 1.9 2 1.9h6.2c1.1 0 1.9-.9 2-1.9L18 6.5M10 10.5v6.5M14 10.5v6.5"/></svg></div>
+      <div class="bp-tit">¿Borrar esta tarea?</div>
+      <div class="bp-tarjeta" style="--c:${esc(color)};--b:${esc(col.color)}">
+        <b>${esc(t.titulo || 'Sin título')}</b>
+        <span class="bp-col"><i></i>${esc(col.nombre)}</span>
+      </div>
+      <ul class="bp-lista">
+        ${trozos.length ? `<li>Se borrarán también ${trozos.join(', ')}</li>` : ''}
+        ${subs ? `<li>☑️ ${trozos.length ? 'y' : 'Se borrará con'} ${subs > 1 ? 'sus ' + subs + ' pasos' : 'su paso'}</li>` : ''}
+        ${bytes ? `<li class="bp-libre">✨ Liberarás <b>${tamTxt(bytes)}</b> de espacio</li>` : ''}
+        <li class="bp-nota">Tendrás unos segundos para deshacerlo.</li>
+      </ul>
+    </div>`,
+    botones:[{ txt:'Cancelar', val:false }, { txt:'🗑 Sí, borrar', cls:'btn-borrar', val:true }] });
   if(!ok) return;
   App.tareas = App.tareas.filter(x => x.id !== id);
   await DB.borrar('tareas', id);
-  cerrar('editor'); soltarUrls(); App.ed = null; pintarTodo();
+  if(App.ed && App.ed.t && App.ed.t.id === id){ Voz.parar(); cerrar('editor'); soltarUrls(); App.ed = null; }
+  pintarTodo();
   let deshecho = false;
-  const tm = setTimeout(async () => { if(!deshecho){ for(const x of ['fotos','videos','audios']) await DB.borrarDeTarea(x, id); } }, 7000);
-  toast('🗑 Tarea borrada', 'Deshacer', async () => {
+  const tm = setTimeout(async () => { if(!deshecho){ for(const x of ['fotos','videos','audios']) await DB.borrarDeTarea(x, id); contarMedia().then(pintarTodo); } }, 7000);
+  toast('🗑 Tarea borrada' + (bytes ? ' · ' + tamTxt(bytes) + ' liberados' : ''), 'Deshacer', async () => {
     deshecho = true; clearTimeout(tm);
+    anotar(t, '↩️ Recuperada después de borrarla');
     App.tareas.push(t); await DB.poner('tareas', limpiaTarea(t)); pintarTodo(); toast('↩️ Recuperada');
   }, 7000);
 }
 async function duplicarTarea(){
   const o = leerEditor();
   const c = structuredClone(limpiaTarea(o));
-  c.id = nuevoId('t'); c.titulo = o.titulo + ' (copia)'; c.creada = Date.now(); c.orden = -Date.now(); delete c.emailEnviado; delete c.recordado;
+  c.id = nuevoId('t'); c.titulo = o.titulo + ' (copia)'; c.creada = Date.now(); c.orden = -Date.now(); delete c.emailEnviado; delete c.recordado; c.hist = []; anotar(c, '⧉ Creada como copia de «' + o.titulo + '»');
   for(const tipo of ['fotos','videos','audios']){
     const l = (await DB.deTarea(tipo, o.id)).filter(x => x.blob);
     if(l.length) await DB.ponerVarios(tipo, l.map(x => ({...x, id:nuevoId(tipo[0]), tareaId:c.id})));
@@ -651,6 +738,10 @@ async function cambiarTableroTarea(){
   if(!ok){ sel.value = Nube.tid; return; }
   sel.disabled = true;
   try{
+    const previa = App.tareas.find(x => x.id === t.id);
+    if(previa) cambiosTarea(previa, t).forEach(x => anotar(t, x));
+    (App.ed.pend || []).forEach(x => anotar(t, x)); App.ed.pend = [];
+    anotar(t, '📋 Movida del tablero «' + Nube.nombreTablero(Nube.tablero) + '» a «' + nom + '»');
     await Nube.moverTarea(t, destino);
     Voz.parar(); cerrar('editor'); soltarUrls(); App.ed = null;
     App.tareas = App.tareas.filter(x => x.id !== t.id);
@@ -665,6 +756,7 @@ async function enviarRecordatorio(){
   const t = leerEditor(), p = persona(t.personaId);
   if(!p || !p.email){ toast('👤 Asigna antes la tarea a alguien con email'); return; }
   App.ed.recordado = Date.now();
+  apuntar('🔔 Recordatorio enviado a ' + nombreP(p)); pintarHistorial();
   if(!App.ed.nueva){
     const o = App.tareas.find(x => x.id === t.id);
     if(o){ o.recordado = App.ed.recordado; await guardarTarea(o); pintarTodo(); }
@@ -759,7 +851,7 @@ function eventos(){
   $('#edRecordar').onclick = enviarRecordatorio;
   $('#edTablero').onchange = cambiarTableroTarea;
   $('#edHoy').onclick = () => { const h = hoyIso(); $('#edIni').value = h; $('#edFin').value = h; pintarDur(); toast('☀️ Fecha: hoy'); };
-  $('#btnGrabarAudio').onclick = async () => { if(await Audios.grabar(App.ed.t.id)){ App.ed.mediaNueva = true; pintarAudios(); contarMedia().then(pintarTodo); } };
+  $('#btnGrabarAudio').onclick = async () => { if(await Audios.grabar(App.ed.t.id)){ App.ed.mediaNueva = true; apuntar('🎙️ Nota de audio añadida'); pintarHistorial(); pintarAudios(); contarMedia().then(pintarTodo); } };
   $('#btnTablero').onclick = () => Nube.elegirTablero();
   $('#edTitulo').onkeydown = e => { if(e.key === 'Enter'){ e.preventDefault(); $('#edNotas').focus(); } };
   $$('.mic').forEach(m => m.onclick = () => Voz.empezar($('#'+m.dataset.mic), m, $('#vozEstado')));
@@ -774,7 +866,7 @@ function eventos(){
   $('#visorBorrar').onclick = async () => {
     if(!_visor) return; const { tipo, id } = _visor;
     if(!await popConfirmar(tipo==='fotos' ? '¿Borrar la foto?' : '¿Borrar el vídeo?', 'No se podrá recuperar.', 'Borrar')) return;
-    await DB.borrar(tipo, id); cerrarVisor();
+    await DB.borrar(tipo, id); apuntar(tipo === 'fotos' ? '🗑 Foto borrada' : '🗑 Vídeo borrado'); pintarHistorial(); cerrarVisor();
     tipo === 'fotos' ? pintarFotos() : pintarVideos();
     contarMedia().then(pintarTodo);
   };
@@ -810,7 +902,7 @@ async function iniciar(){
   setTimeout(() => document.body.classList.add('ya'), 1800);
   pedirPersistencia();
   Nube.iniciar();
-  $('#nubeEstado').onclick = () => { if(!Nube.user) Nube.pantallaEntrar(); else { Ajustes.abrir(); Ajustes.tab('tableros'); } };
+  $('#nubeEstado').onclick = () => { if(!Nube.user) Nube.pantallaEntrar(); else Nube.explicarEstado(); };
   if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
 document.addEventListener('DOMContentLoaded', iniciar);
