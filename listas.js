@@ -122,6 +122,7 @@ const Listas = {
     const d = new Date(), f = DIAS[d.getDay()] + ', ' + d.getDate() + ' de ' + MESES[d.getMonth()];
     $('#lsTitulo').innerHTML = `<b>${esc(l.nombre)}</b><span class="ls-flecha">▾</span>`;
     $('#lsFecha').textContent = f.charAt(0).toUpperCase() + f.slice(1) + (this.modo === 'local' ? ' · en este aparato' : '');
+    const pu = $('#lsPuntos'); if(pu){ pu.hidden = this.datos.length < 2; pu.innerHTML = this.datos.map(x => `<button class="${x.id === l.id ? 'on' : ''}" data-ir="${x.id}" title="${esc(x.nombre)}" aria-label="${esc(x.nombre)}"></button>`).join(''); }
     this.pintarFondo();
     const pend = this.ordenados(l, false), hechos = this.ordenados(l, true);
     const fila = (x, i, n) => `<div class="ls-item ${x.ok ? 'ok' : ''}" data-id="${x.id}" tabindex="0">
@@ -362,6 +363,7 @@ const Listas = {
     $('#lsVolver').innerHTML = icono('tablero'); $('#lsCal').innerHTML = icono('calendario'); $('#lsOpc').innerHTML = icono('ajustes');
     $('#btnListas').onclick = $('#btnListas2').onclick = () => this.abrir();
     $('#lsVolver').onclick = () => this.cerrar(); $('#lsCal').onclick = () => this.cerrar('cal');
+    $('#lsPuntos').onclick = e => { const b = e.target.closest('[data-ir]'); if(b){ this.actual = b.dataset.ir; lsSet('ph-lista', b.dataset.ir); this.reordenar = false; this.pintar(); } };
     $('#lsOpc').onclick = () => this.opciones(); $('#lsTitulo').onclick = () => this.elegirLista();
     $('#lsFondoIn').onchange = e => { this.fondoDeArchivo(e.target.files[0]); e.target.value = ''; };
     const inp = $('#lsNuevo');
@@ -372,7 +374,7 @@ const Listas = {
     this.iniciarDeslizar();
     // pasar a la lista siguiente o anterior deslizando (fuera de los puntos)
     deslizarPaginas($('#vListas'), {
-      ignorar: t => !!t.closest('.ls-item, .ls-add, button, input, .ls-reord'),
+      ignorar: t => !!t.closest('.ls-item, input, .ls-reord, .ls-puntos'),
       puede: dir => { if(this.datos.length < 2) return false; const i = this.datos.findIndex(l => l.id === (this.lista() || {}).id); return this.datos[i + dir] !== undefined; },
       cont: () => $('#vListas'),
       fondo: () => { const v = getComputedStyle($('#vListas')); return v.backgroundImage !== 'none' ? v.backgroundImage + ' center/cover no-repeat, ' + v.backgroundColor : v.backgroundColor; },

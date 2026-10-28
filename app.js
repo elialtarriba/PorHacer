@@ -1,6 +1,6 @@
 /* PorHacer · app principal: tablero de columnas, tareas y editor */
 
-const VERSION = 'V7.1';
+const VERSION = 'V7.2';
 const $ = (s, r=document) => r.querySelector(s);
 const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -127,32 +127,39 @@ function paginaA(ctx, target, dur, hecho){
   requestAnimationFrame(frame);
 }
 // zona: donde se desliza · o: { cont(), puede(dir), cambio(dir), fondo(), ignorar(target), soloDedo }
+// Con el dedo usa eventos táctiles (más fiables en el iPhone); con el ratón, eventos de puntero.
 function deslizarPaginas(zona, o){
   let D = null, pasando = false;
-  zona.addEventListener('pointerdown', e => {
-    if(pasando || e.button > 0 || (o.soloDedo && e.pointerType === 'mouse') || (o.ignorar && o.ignorar(e.target))) return;
-    D = { x:e.clientX, y:e.clientY, id:e.pointerId, ctx:null, lx:e.clientX, lt:performance.now(), v:0 };
-  });
-  zona.addEventListener('pointermove', e => {
-    if(!D || e.pointerId !== D.id) return;
-    const dx = e.clientX - D.x, dy = e.clientY - D.y;
+  const empezar = (x, y, t) => { if(pasando || (o.ignorar && o.ignorar(t))) return; D = { x, y, ctx:null, lx:x, lt:performance.now(), v:0, no:false }; };
+  const mover = (x, y) => {
+    if(!D || D.no) return false;
+    const dx = x - D.x, dy = y - D.y;
     if(!D.ctx){
-      if(Math.abs(dx) < 14) return;
-      if(Math.abs(dy) > Math.abs(dx) * 0.7){ D = null; return; }
+      if(Math.abs(dx) < 8 && Math.abs(dy) < 8) return false;
+      if(Math.abs(dy) > Math.abs(dx)){ D.no = true; return false; }          // va hacia arriba o abajo: es para desplazar
       const dir = dx < 0 ? 1 : -1;
-      if(!o.puede(dir)){ D = null; return; }
+      if(!o.puede(dir)){ D.no = true; return false; }
       pasando = true;
-      D.ctx = paginaEmpieza(o.cont(), dir, o.cambio, o.fondo ? o.fondo() : '#fff'); if(!D.ctx){ pasando = false; D = null; return; }
-      try{ zona.setPointerCapture(e.pointerId); }catch(_){}
-      const s = getSelection(); try{ s.removeAllRanges(); }catch(_){}
+      D.ctx = paginaEmpieza(o.cont(), dir, o.cambio, o.fondo ? o.fondo() : '#fff'); if(!D.ctx){ pasando = false; D = null; return false; }
+      try{ getSelection().removeAllRanges(); }catch(_){}
     }
-    const now = performance.now(); D.v = (e.clientX - D.lx) / Math.max(1, now - D.lt); D.lx = e.clientX; D.lt = now;
-    D.ctx.render(Math.max(0, Math.min(1, (D.ctx.dir > 0 ? -dx : dx) / (D.ctx.W * 0.85))));
-  });
-  const fin = () => { if(!D) return; const d = D; D = null; if(!d.ctx) return;
-    const golpe = (d.ctx.dir > 0 ? -d.v : d.v) > 0.6;
-    paginaA(d.ctx, (d.ctx.p > 0.4 || (golpe && d.ctx.p > 0.08)) ? 1 : 0, 600, () => { pasando = false; }); };
-  zona.addEventListener('pointerup', fin); zona.addEventListener('pointercancel', fin);
+    const now = performance.now(); D.v = (x - D.lx) / Math.max(1, now - D.lt); D.lx = x; D.lt = now;
+    D.ctx.render(Math.max(0, Math.min(1, (D.ctx.dir > 0 ? -dx : dx) / (D.ctx.W * 0.55))));
+    return true;
+  };
+  const acabar = () => { if(!D) return; const d = D; D = null; if(!d.ctx) return;
+    const golpe = (d.ctx.dir > 0 ? -d.v : d.v) > 0.3;
+    paginaA(d.ctx, (d.ctx.p > 0.25 || (golpe && d.ctx.p > 0.04)) ? 1 : 0, 520, () => { pasando = false; }); };
+  // dedo
+  zona.addEventListener('touchstart', e => { if(e.touches.length !== 1){ D = null; return; } const t = e.touches[0]; empezar(t.clientX, t.clientY, e.target); }, { passive:true });
+  zona.addEventListener('touchmove', e => { if(!D) return; const t = e.touches[0]; if(mover(t.clientX, t.clientY) && e.cancelable) e.preventDefault(); }, { passive:false });
+  zona.addEventListener('touchend', acabar); zona.addEventListener('touchcancel', acabar);
+  // ratón
+  if(!o.soloDedo){
+    zona.addEventListener('pointerdown', e => { if(e.pointerType !== 'mouse' || e.button > 0) return; empezar(e.clientX, e.clientY, e.target); });
+    addEventListener('pointermove', e => { if(e.pointerType === 'mouse' && D) mover(e.clientX, e.clientY); });
+    addEventListener('pointerup', e => { if(e.pointerType === 'mouse') acabar(); });
+  }
 }
 function popup({ tit, html, botones, alAbrir }){
   return new Promise(ok => {
