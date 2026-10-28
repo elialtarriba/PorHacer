@@ -1,6 +1,6 @@
 /* PorHacer · app principal: tablero de columnas, tareas y editor */
 
-const VERSION = 'V4.15';
+const VERSION = 'V7';
 const $ = (s, r=document) => r.querySelector(s);
 const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -58,7 +58,7 @@ function toast(txt, accion, fn, ms=3200){
 }
 /* Con el ratón: arrastrar para mover las barras de pestañas y la rueda para ir de lado */
 (function(){
-  const SEL = '.tabs-scroll, .chips, .tabs';
+  const SEL = '.tabs-scroll, .chips, .tabs, .notas-barra';
   let D = null;
   document.addEventListener('pointerdown', e => {
     if(e.pointerType !== 'mouse' || e.button !== 0) return;
@@ -554,6 +554,7 @@ async function abrirEditor(id, colId){
   $$('#edPrio button').forEach(b => b.classList.toggle('on', +b.dataset.p === (t.prio||0)));
   $('#edIni').value = t.ini || ''; $('#edFin').value = t.fin || '';
   Avisos.pintarEditor(t);
+  Listas.rotuloTarea(t);
   $('#edPersona').innerHTML = opcionesPersonas(t.personaId);
   $('#edEmail').checked = false;
   pintarSubs(); pintarDur(); pintarEmail(); pintarPunto();
@@ -583,7 +584,7 @@ function pintarEmail(){
   fila.classList.toggle('desactivado', !(p && p.email));
   if(!(p && p.email)) $('#edEmail').checked = false;
   $('#edEmailInfo').textContent = p ? (p.email ? (Correo.hayEmailJS() ? 'Se le enviará solo a ' : 'Se abrirá tu correo con todo listo para ') + p.email : 'Esta persona no tiene email') : 'Elige antes a quién se asigna';
-  $('#edRecordar').disabled = !(p && p.email);
+  $('#edRecordar').disabled = false;
 }
 function pintarSubs(){
   const subs = App.ed.t.subs || [];
@@ -780,7 +781,7 @@ async function borrarTarea(id){
 async function duplicarTarea(){
   const o = leerEditor();
   const c = structuredClone(limpiaTarea(o));
-  c.id = nuevoId('t'); c.titulo = o.titulo + ' (copia)'; c.creada = Date.now(); c.orden = -Date.now(); delete c.emailEnviado; delete c.recordado; delete c.avisos; c.hist = []; anotar(c, '⧉ Creada como copia de «' + o.titulo + '»');
+  c.id = nuevoId('t'); c.titulo = o.titulo + ' (copia)'; c.creada = Date.now(); c.orden = -Date.now(); delete c.emailEnviado; delete c.recordado; delete c.avisos; delete c.deLista; c.hist = []; anotar(c, '⧉ Creada como copia de «' + o.titulo + '»');
   for(const tipo of ['fotos','videos','audios']){
     const l = (await DB.deTarea(tipo, o.id)).filter(x => x.blob);
     if(l.length) await DB.ponerVarios(tipo, l.map(x => ({...x, id:nuevoId(tipo[0]), tareaId:c.id})));
@@ -823,16 +824,27 @@ async function cambiarTableroTarea(){
 
 /* Recordatorio por email (se puede enviar las veces que haga falta) */
 async function enviarRecordatorio(){
-  const t = leerEditor(), p = persona(t.personaId);
-  if(!p || !p.email){ toast('👤 Asigna antes la tarea a alguien con email'); return; }
+  const t = leerEditor(), p0 = persona(t.personaId), con = App.personas.filter(p => p.email);
+  const otro = !(p0 && p0.email);
+  const v = await popup({ tit:'🔔 Recordatorio por email', html:`
+    <label class="lbl">¿A quién?<select id="rcPara">${con.map(p => `<option value="${p.id}" ${p0 && p0.id === p.id ? 'selected' : ''}>${esc(nombreP(p))} · ${esc(p.email)}</option>`).join('')}<option value="__otro" ${otro ? 'selected' : ''}>✉️ Otro email…</option></select></label>
+    <input id="rcMail" type="email" inputmode="email" placeholder="email@ejemplo.com" style="${otro ? '' : 'display:none'}">
+    <label class="lbl" style="margin-top:10px">Tu mensaje (opcional)<textarea id="rcMsg" class="rc-msg" rows="3" placeholder="Por ejemplo: ¡Que no se te olvide, es para el viernes! 😊"></textarea></label>`,
+    botones:[{ txt:'Cancelar', val:null }, { txt:'📧 Enviar', cls:'btn-pri',
+      validar:c => { if($('#rcPara', c).value !== '__otro') return true; const m = $('#rcMail', c).value.trim(); if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m)){ $('#rcMail', c).focus(); toast('✉️ Escribe un email correcto'); return false; } return true; },
+      val:c => ({ id:$('#rcPara', c).value, mail:$('#rcMail', c).value.trim(), msg:$('#rcMsg', c).value.trim() }) }],
+    alAbrir:c => { $('#rcPara', c).onchange = e => { $('#rcMail', c).style.display = e.target.value === '__otro' ? '' : 'none'; }; } });
+  if(!v) return;
+  const p = v.id === '__otro' ? { nombre:v.mail.split('@')[0], apellidos:'', email:v.mail } : persona(v.id);
   App.ed.recordado = Date.now();
-  apuntar('🔔 Recordatorio enviado a ' + nombreP(p)); pintarHistorial();
+  apuntar('🔔 Recordatorio enviado a ' + (nombreP(p) || p.email)); pintarHistorial();
   if(!App.ed.nueva){
     const o = App.tareas.find(x => x.id === t.id);
     if(o){ o.recordado = App.ed.recordado; await guardarTarea(o); pintarTodo(); }
   }
   await contarMedia();
-  Correo.recordatorio({ ...t, nf:(App.tareas.find(x => x.id === t.id)||{}).nf, nv:(App.tareas.find(x => x.id === t.id)||{}).nv, na:(App.tareas.find(x => x.id === t.id)||{}).na });
+  const o = App.tareas.find(x => x.id === t.id) || {};
+  Correo.recordatorio({ ...t, nf:o.nf, nv:o.nv, na:o.na }, { p, mensaje:v.msg });
 }
 
 /* Añadir al calendario del móvil (.ics) */
@@ -931,6 +943,7 @@ function eventos(){
   $('#edDup').onclick = duplicarTarea;
   $('#edIcs').onclick = exportarIcs;
   $('#edRecordar').onclick = enviarRecordatorio;
+  $('#edALista').onclick = () => Listas.desdeTarea();
   $('#edTablero').onchange = cambiarTableroTarea;
   $('#edHoy').onclick = () => { const h = hoyIso(); $('#edIni').value = h; $('#edFin').value = h; pintarDur(); toast('☀️ Fecha: hoy'); };
   $('#btnGrabarAudio').onclick = async () => { if(await Audios.grabar(App.ed.t.id)){ App.ed.mediaNueva = true; apuntar('🎙️ Nota de audio añadida'); pintarHistorial(); pintarAudios(); contarMedia().then(pintarTodo); } };

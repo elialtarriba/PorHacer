@@ -19,10 +19,13 @@ const Listas = {
     ['rosa', 'Rosa', 'linear-gradient(180deg,#b04a74,#eaa1bd)'],
     ['rojo', 'Rojo', 'linear-gradient(180deg,#b3261e,#ef7a70)'],
     ['naranja', 'Naranja', 'linear-gradient(180deg,#c2581b,#f3a76b)'],
+    ['amarillo', 'Amarillo', 'linear-gradient(180deg,#b38a06,#f6dc72)'],
+    ['beige', 'Beige', 'linear-gradient(180deg,#8f7656,#ece1cd)'],
     ['verde', 'Verde', 'linear-gradient(180deg,#2c7a4b,#86c79b)'],
     ['oliva', 'Oliva', 'linear-gradient(180deg,#5d6b2d,#a8b56a)'],
     ['gris', 'Gris', 'linear-gradient(180deg,#3a3a3c,#8e8e93)'],
     ['noche', 'Noche', 'linear-gradient(180deg,#151a2e,#3c4a78)'],
+    ['negro', 'Negro', 'linear-gradient(180deg,#050506,#4e4e54)'],
   ],
   ORDEN: [['manual', 'Como yo las ponga'], ['imp', 'Importancia ⭐'], ['alfa', 'Alfabético'], ['fecha', 'Fecha de creación']],
 
@@ -108,10 +111,10 @@ const Listas = {
     const it = l.items.filter(x => !!x.ok === hechos);
     if(hechos) return it.sort((a, b) => (b.hecho || 0) - (a.hecho || 0));
     const m = l.modo || 'manual';
-    if(m === 'imp') return it.sort((a, b) => (b.imp ? 1 : 0) - (a.imp ? 1 : 0) || (a.pos || 0) - (b.pos || 0));
-    if(m === 'alfa') return it.sort((a, b) => a.t.localeCompare(b.t, 'es'));
-    if(m === 'fecha') return it.sort((a, b) => (b.creado || 0) - (a.creado || 0));
-    return it.sort((a, b) => (a.pos || 0) - (b.pos || 0));
+    if(m === 'alfa') it.sort((a, b) => a.t.localeCompare(b.t, 'es'));
+    else if(m === 'fecha') it.sort((a, b) => (b.creado || 0) - (a.creado || 0));
+    else it.sort((a, b) => (a.pos || 0) - (b.pos || 0));
+    return [...it.filter(x => x.imp), ...it.filter(x => !x.imp)];      // los importantes ⭐, siempre arriba
   },
   pintar(){
     if(!$('#vListas') || !$('#vListas').classList.contains('activa')) return;
@@ -146,7 +149,7 @@ const Listas = {
     await this.guardar(l);
   },
   async marcar(id){ const [l, x] = this.item(id); if(!x) return; x.ok = !x.ok; x.hecho = x.ok ? Date.now() : null; if(x.ok) this.sonido(); await this.guardar(l); },
-  async estrella(id){ const [l, x] = this.item(id); if(!x) return; x.imp = !x.imp; await this.guardar(l); },
+  async estrella(id){ const [l, x] = this.item(id); if(!x) return; x.imp = !x.imp; if(x.imp) this.sonido('estrella'); await this.guardar(l); },
   async quitar(id){
     const [l, x] = this.item(id); if(!x) return;
     const i = l.items.indexOf(x); l.items.splice(i, 1); await this.guardar(l);
@@ -157,8 +160,9 @@ const Listas = {
     if(j < 0 || j >= pend.length) return;
     pend.forEach((x, k) => x.pos = k); pend[i].pos = j; pend[j].pos = i; l.modo = 'manual'; await this.guardar(l);
   },
-  sonido(){ try{ Fiesta.despertar(); const ac = Fiesta._ac; if(!ac) return; const t0 = ac.currentTime + .02;
-    [[880, 0], [1318.5, .08]].forEach(([f, t]) => { const o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(.0001, t0 + t); g.gain.exponentialRampToValueAtTime(.12, t0 + t + .01); g.gain.exponentialRampToValueAtTime(.0001, t0 + t + .25); o.connect(g); g.connect(ac.destination); o.start(t0 + t); o.stop(t0 + t + .3); }); }catch(e){} },
+  sonido(tipo){ if(App.ajustes.sonidoListas === 'no') return; try{ Fiesta.despertar(); const ac = Fiesta._ac; if(!ac) return; const t0 = ac.currentTime + .02;
+    const notas = tipo === 'estrella' ? [[1046.5, 0], [1318.5, .07], [1568, .14], [2093, .21]] : [[880, 0], [1318.5, .08]];
+    notas.forEach(([f, t]) => { const o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(.0001, t0 + t); g.gain.exponentialRampToValueAtTime(.12, t0 + t + .01); g.gain.exponentialRampToValueAtTime(.0001, t0 + t + .25); o.connect(g); g.connect(ac.destination); o.start(t0 + t); o.stop(t0 + t + .3); }); }catch(e){} },
   async editar(id){
     const [l, x] = this.item(id); if(!x) return;
     const v = await popup({ tit:'✏️ Punto de la lista', html:`<input id="lsEdT" value="${esc(x.t)}" maxlength="200"><input id="lsEdN" value="${esc(x.nota || '')}" placeholder="Nota (opcional)" maxlength="200">
@@ -183,7 +187,8 @@ const Listas = {
       botones:[{ txt:'Cancelar', val:null }, { txt:'📋 Pasar', cls:'btn-pri', val:c => ({ tab:tabs.length ? $('#lsEnvTab', c).value : null, quitar:$('#lsEnvQuitar', c).checked }) }] });
     if(!v) return;
     const t = { id:nuevoId('t'), titulo:x.t, notas:x.nota || '', colId:'nueva', color:'', prio:x.imp ? 3 : 0, ini:'', fin:'', personaId:'', subs:[], creada:Date.now(), orden:-Date.now() };
-    anotar(t, '✨ Creada desde la lista «' + l.nombre + '»');
+    t.deLista = { id:l.id, nombre:l.nombre };
+    anotar(t, '📝 Viene de la lista sencilla «' + l.nombre + '»');
     let nombreTab = 'este tablero';
     try{
       if(!v.tab || v.tab === Nube.tid){
@@ -201,8 +206,45 @@ const Listas = {
     }catch(e){ console.warn(e); popAviso('No se pudo pasar', 'No se ha podido crear la tarea. Prueba otra vez.'); return; }
     if(v.quitar) l.items = l.items.filter(z => z.id !== x.id); else x.env = nombreTab;
     await this.guardar(l);
-    toast('📋 «' + x.t + '» está en «' + nombreTab + '»', 'Ir', () => { this.cerrar(); if(v.tab && v.tab !== Nube.tid) Nube.conectar(v.tab); }, 6000);
+    const ir = await this.avisoPasado(x.t, nombreTab);
+    if(ir){ this.cerrar(); if(v.tab && v.tab !== Nube.tid) Nube.conectar(v.tab); }
   },
+
+  /* Ventanita al pasar un punto al PorHacer (dura lo que digas en Configuración → Más) */
+  avisoPasado(txt, tab){
+    const seg = +(App.ajustes.popupLista || 8);
+    return popup({ tit:'', html:`<div class="ls-pasado"><div class="lp-ico">📋</div><b>¡Pasado al PorHacer!</b>
+        <p>«${esc(txt)}» ya es una tarea de <b>«${esc(tab)}»</b>.</p>${seg ? `<div class="lp-barra"><i style="animation-duration:${seg}s"></i></div>` : ''}</div>`,
+      botones:[{ txt:'Seguir en la lista', val:false }, { txt:'📋 Ir al PorHacer', cls:'btn-pri', val:true }],
+      alAbrir:(c, fin) => { if(seg){ const tm = setTimeout(() => { if($('#popup').classList.contains('abierto') && $('.ls-pasado', c)) fin(false); }, seg * 1000); } } });
+  },
+  /* Pasar una tarea del PorHacer a una lista (solo el título) */
+  async desdeTarea(){
+    if(!App.ed) return;
+    const t = leerEditor(); if(!t.titulo){ $('#edTitulo').focus(); toast('✏️ Escribe antes qué hay que hacer'); return; }
+    this.vigilar();
+    for(let i = 0; i < 20 && !this.datos.length; i++) await new Promise(r => setTimeout(r, 150));
+    if(!this.datos.length) this.asegurar();
+    const origen = t.deLista && this.datos.find(l => l.id === t.deLista.id);
+    const v = await popup({ tit:'📝 Pasar a una lista', html:`<p class="ls-env-t">«${esc(t.titulo)}»</p>
+      <label class="lbl">¿A qué lista?<select id="alLista">${this.datos.map(l => `<option value="${l.id}" ${origen && origen.id === l.id ? 'selected' : ''}>📝 ${esc(l.nombre)}${origen && origen.id === l.id ? ' (de donde venía)' : ''}</option>`).join('')}</select></label>
+      <p class="aj-ayuda" style="margin-top:8px">Solo pasa el <b>título</b>${t.prio === 3 ? ', marcado como importante ⭐' : ''}.</p>
+      ${App.ed.nueva ? '' : '<label class="check" style="margin-top:10px"><input type="checkbox" id="alQuitar" checked><span class="caja"></span><span>Quitar la tarea del tablero</span></label>'}`,
+      botones:[{ txt:'Cancelar', val:null }, { txt:'📝 Pasar', cls:'btn-pri', val:c => ({ id:$('#alLista', c).value, quitar:App.ed.nueva || ($('#alQuitar', c) && $('#alQuitar', c).checked) }) }] });
+    if(!v) return;
+    const l = this.datos.find(x => x.id === v.id); if(!l) return;
+    const min = Math.min(0, ...l.items.map(x => x.pos || 0));
+    l.items.push({ id:nuevoId('i'), t:t.titulo, ok:false, imp:t.prio === 3, creado:Date.now(), pos:min - 1 });
+    await this.guardar(l);
+    if(v.quitar){
+      const id = t.id, nueva = App.ed.nueva;
+      Voz.parar(); cerrar('editor'); soltarUrls(); App.ed = null;
+      if(!nueva){ App.tareas = App.tareas.filter(x => x.id !== id); await DB.borrar('tareas', id); for(const a of ['fotos','videos','audios']) await DB.borrarDeTarea(a, id).catch(() => {}); }
+      await contarMedia(); pintarTodo();
+    } else { apuntar('📝 Copiada a la lista «' + l.nombre + '»'); pintarHistorial(); }
+    toast('📝 «' + t.titulo + '» está en la lista «' + l.nombre + '»', 'Ver', () => { if(App.ed) cancelarEditor(); this.actual = l.id; lsSet('ph-lista', l.id); this.abrir(); }, 6000);
+  },
+  rotuloTarea(t){ const b = $('#edALista'); if(!b) return; const o = t && t.deLista && this.datos.find(l => l.id === t.deLista.id); b.textContent = o ? '📝 Devolver a «' + o.nombre + '»' : '📝 Pasar a una lista'; },
 
   /* ---------------- Deslizar (dedo o ratón) ---------------- */
   iniciarDeslizar(){
@@ -317,7 +359,7 @@ const Listas = {
   /* ---------------- Arranque ---------------- */
   iniciar(){
     $('#btnListas').innerHTML = $('#btnListas2').innerHTML = '<img src="listas.png" alt="">';
-    $('#lsVolver').innerHTML = icono('tablero'); $('#lsCal').innerHTML = icono('calendario');
+    $('#lsVolver').innerHTML = icono('tablero'); $('#lsCal').innerHTML = icono('calendario'); $('#lsOpc').innerHTML = icono('ajustes');
     $('#btnListas').onclick = $('#btnListas2').onclick = () => this.abrir();
     $('#lsVolver').onclick = () => this.cerrar(); $('#lsCal').onclick = () => this.cerrar('cal');
     $('#lsOpc').onclick = () => this.opciones(); $('#lsTitulo').onclick = () => this.elegirLista();

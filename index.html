@@ -10,9 +10,9 @@
 <meta name="theme-color" content="#eeeff1">
 <title>PorHacer</title>
 <link rel="icon" href="logo.png" type="image/png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png?v=55">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=7">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="estilos.css?v=55">
+<link rel="stylesheet" href="estilos.css?v=7">
 </head>
 <body>
 
@@ -44,7 +44,7 @@
         <button class="ibtn" id="btnAjustes" title="Configuración" aria-label="Configuración"></button>
       </div>
       <div class="insignias">
-            <span class="ver" id="verTxt">V4.15</span>
+            <span class="ver" id="verTxt">V7</span>
             <button class="nube-estado off" id="nubeEstado" hidden title="Nube" aria-label="Nube"></button>
           </div>
     </div>
@@ -75,7 +75,7 @@
       <small id="lsFecha"></small>
     </div>
     <button class="ibtn" id="lsCal" title="Calendario" aria-label="Calendario"></button>
-    <button class="ibtn ls-opc" id="lsOpc" title="Opciones de lista" aria-label="Opciones de lista">⋯</button>
+    <button class="ibtn ls-opc" id="lsOpc" title="Opciones de lista" aria-label="Opciones de lista"></button>
   </header>
   <div class="ls-add">
     <button class="ls-mas" id="lsMas" aria-label="Añadir">＋</button>
@@ -171,10 +171,9 @@
 
         <div class="lbl avisos-lbl">🔔 Avisos con sonido <small class="gris">(solo te suenan a ti)</small>
           <div class="fila-avisos">
-            <span class="fecha-campo aviso-campo"><input type="datetime-local" id="edAviso1"><span class="fecha-vacia">Aviso 1: sin poner</span><button type="button" class="fecha-x" data-x="edAviso1" aria-label="Quitar aviso">✕</button><small class="aviso-info" id="edAvisoInfo1"></small></span>
-            <span class="fecha-campo aviso-campo"><input type="datetime-local" id="edAviso2"><span class="fecha-vacia">Aviso 2: sin poner</span><button type="button" class="fecha-x" data-x="edAviso2" aria-label="Quitar aviso">✕</button><small class="aviso-info" id="edAvisoInfo2"></small></span>
+            <span class="fecha-campo aviso-campo"><input type="datetime-local" id="edAviso1"><span class="fecha-vacia">⏰ Aviso 1</span><button type="button" class="fecha-x" data-x="edAviso1" aria-label="Quitar aviso">✕</button><small class="aviso-info" id="edAvisoInfo1"></small></span>
+            <span class="fecha-campo aviso-campo"><input type="datetime-local" id="edAviso2"><span class="fecha-vacia">⏰ Aviso 2</span><button type="button" class="fecha-x" data-x="edAviso2" aria-label="Quitar aviso">✕</button><small class="aviso-info" id="edAvisoInfo2"></small></span>
           </div>
-          <div class="aviso-rapido"><button type="button" class="mini-btn" data-av="1h">⏱ Dentro de 1 hora</button><button type="button" class="mini-btn" data-av="man">🌅 Mañana a las 9</button></div>
         </div>
 
         <div class="lbl">Asignada a
@@ -202,6 +201,7 @@
         <div class="ed-extra">
           <button class="mini-btn" id="edIcs">📅 Al calendario del móvil</button>
           <button class="mini-btn" id="edDup">⧉ Duplicar</button>
+          <button class="mini-btn" id="edALista">📝 Pasar a una lista</button>
         </div>
         <div class="ed-tablero" id="edTabFila" hidden>
           <label class="lbl">📋 Tablero de esta tarea
@@ -349,24 +349,24 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="iconos.js?v=55"></script>
-<script src="temas.js?v=55"></script>
-<script src="db.js?v=55"></script>
-<script src="firebase-config.js?v=55"></script>
-<script src="email-config.js?v=55"></script>
-<script src="correo.js?v=55"></script>
-<script src="audio.js?v=55"></script>
-<script src="listas.js?v=55"></script>
-<script src="bloc.js?v=55"></script>
-<script src="avisos.js?v=55"></script>
-<script src="fiesta.js?v=55"></script>
-<script src="nube.js?v=55"></script>
-<script src="fotos.js?v=55"></script>
-<script src="videos.js?v=55"></script>
-<script src="voz.js?v=55"></script>
-<script src="calendario.js?v=55"></script>
-<script src="ajustes.js?v=55"></script>
-<script src="copias.js?v=55"></script>
-<script src="app.js?v=55"></script>
+<script src="iconos.js?v=7"></script>
+<script src="temas.js?v=7"></script>
+<script src="db.js?v=7"></script>
+<script src="firebase-config.js?v=7"></script>
+<script src="email-config.js?v=7"></script>
+<script src="correo.js?v=7"></script>
+<script src="audio.js?v=7"></script>
+<script src="listas.js?v=7"></script>
+<script src="bloc.js?v=7"></script>
+<script src="avisos.js?v=7"></script>
+<script src="fiesta.js?v=7"></script>
+<script src="nube.js?v=7"></script>
+<script src="fotos.js?v=7"></script>
+<script src="videos.js?v=7"></script>
+<script src="voz.js?v=7"></script>
+<script src="calendario.js?v=7"></script>
+<script src="ajustes.js?v=7"></script>
+<script src="copias.js?v=7"></script>
+<script src="app.js?v=7"></script>
 </body>
 </html>

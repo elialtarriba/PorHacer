@@ -850,3 +850,40 @@ body.ya .columna, body.ya .tarjeta{animation:none}
 #vListas.ls-app .ls-cara{border:1px solid var(--line);box-shadow:0 2px 0 rgba(0,0,0,.05)}
 #vListas.ls-app .ls-item.ok .ls-check{background:var(--dark);border-color:var(--dark)}
 #vListas.ls-app .ls-add{background:var(--card);border:1.5px solid var(--line);box-shadow:0 3px 0 rgba(0,0,0,.05)}
+
+/* ===== V7 ===== */
+/* Botones con más profundidad: se nota que se hunden al pulsar */
+.ibtn{box-shadow:0 5px 0 rgba(0,0,0,.16),0 9px 16px var(--sombra),inset 0 1px 0 rgba(255,255,255,.95)}
+.ibtn:active{transform:translateY(4px)!important;box-shadow:0 1px 0 rgba(0,0,0,.16),inset 0 2px 7px rgba(0,0,0,.14)!important}
+.btn-pri:active,.btn-sec:active,.mini-btn:active,.fab:active{transform:translateY(3px)!important}
+.opcion,.ls-check,.ls-estrella,.ls-mas,.ls-pc-b,.ls-tema,.ls-grupo,.bloc-tab,.bloc-barra button,.notas-barra button,.bloc-m,.ls-mov,.t-check,.cerrar,.tab-pill,.nube-estado{transition:transform .08s,box-shadow .08s,filter .1s}
+.opcion:active,.ls-pc-b:active,.ls-tema:active,.ls-grupo:active,.bloc-barra button:active,.notas-barra button:active,.ls-mov:active,.cerrar:active,.tab-pill:active,.nube-estado:active{transform:translateY(2px);filter:brightness(.93)}
+.ls-mas{box-shadow:0 3px 0 color-mix(in srgb,var(--accent) 60%,#000)}
+.ls-mas:active{transform:translateY(3px);box-shadow:none}
+.ls-check:active,.ls-estrella:active,.t-check:active{transform:scale(.86)}
+.ls-opc svg{width:30px;height:30px}
+/* Notas de la tarea: la barra en una sola fila, que se desliza */
+.campo-nota .notas-barra{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+.campo-nota .notas-barra::-webkit-scrollbar{display:none}
+.campo-nota .notas-barra button,.campo-nota .notas-barra .bloc-sep{flex:none}
+/* Avisos: los dos en una fila, en gris y centrados */
+.fila-avisos{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:8px}
+.fila-avisos>*:first-child,.fila-avisos>*{margin-top:5px}
+.aviso-campo input[type=datetime-local]{text-align:center;padding:0 22px 0 4px;font-size:13.5px;font-weight:700;color:var(--ink2)}
+.aviso-campo input[type=datetime-local]::-webkit-date-and-time-value{text-align:center}
+.aviso-campo input[type=datetime-local]::-webkit-datetime-edit{justify-content:center}
+.aviso-campo .fecha-vacia{left:0;right:22px;text-align:center;font-size:13.5px}
+.aviso-campo .fecha-x{right:4px}
+.aviso-info{text-align:center}
+@media (max-width:360px){ .aviso-campo input[type=datetime-local]{font-size:12px} }
+/* Recordatorio */
+.rc-msg{width:100%;margin-top:6px;border-radius:13px;border:2px solid var(--line);background:var(--colbg);padding:10px 12px;font-size:15px;font-family:inherit;font-weight:600;resize:vertical;outline:0}
+.rc-msg:focus{border-color:var(--accent)}
+/* Ventanita «¡Pasado al PorHacer!» */
+.ls-pasado{text-align:center}
+.ls-pasado .lp-ico{width:62px;height:62px;margin:0 auto 8px;border-radius:50%;background:#effaf2;display:grid;place-items:center;font-size:30px;animation:bpEntra .45s cubic-bezier(.3,1.6,.5,1)}
+.ls-pasado b{font-size:19px;color:var(--dark)}
+.ls-pasado p{margin-top:6px}
+.lp-barra{height:5px;border-radius:4px;background:var(--line);margin-top:12px;overflow:hidden}
+.lp-barra i{display:block;height:100%;background:var(--accent);transform-origin:left;animation:lpBarra linear forwards}
+@keyframes lpBarra{from{transform:scaleX(1)}to{transform:scaleX(0)}}

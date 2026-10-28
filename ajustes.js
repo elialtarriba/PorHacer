@@ -165,6 +165,10 @@ const Ajustes = {
     cont.innerHTML = `
       <div class="aj-sec"><h4>Al abrir la app, ver…</h4>${seg('ajInicio', [['tablero','📋 PorHacer'],['listas','📝 Listas'],['cal','📅 Calendario']], a.inicio || 'tablero')}
         <p class="aj-ayuda">Lo primero que se ve al entrar en la app, en este aparato.</p></div>
+      <div class="aj-sec"><h4>Sonidos de las listas</h4>${seg('ajSonL', [['si','🔊 Con sonido'],['no','🔇 Sin sonido']], a.sonidoListas || 'si')}
+        <p class="aj-ayuda">El «tilín» al marcar un punto como hecho y al ponerle la estrella ⭐.</p></div>
+      <div class="aj-sec"><h4>Aviso al pasar un punto al PorHacer</h4>${seg('ajPopL', [['4','4 s'],['8','8 s'],['15','15 s'],['0','Hasta cerrarlo']], String(a.popupLista || '8'))}
+        <p class="aj-ayuda">Cuánto rato se ve la ventanita «¡Pasado al PorHacer!» con el botón para ir al tablero.</p></div>
       <div class="aj-sec"><h4>Idioma del micrófono</h4>${seg('ajVoz', [['es-ES','Castellano'],['ca-ES','Català'],['en-GB','English']], a.idiomaVoz)}
         <p class="aj-ayuda">Puedes decir «coma», «punto», «punto y aparte», «nueva línea».</p></div>
       <div class="aj-sec"><h4>Calidad de las fotos</h4>${seg('ajFoto', [['ligera','Ligera'],['normal','Normal'],['alta','Alta']], a.calidadFoto)}
@@ -174,7 +178,7 @@ const Ajustes = {
       <div class="aj-sec"><h4>Firma de los emails</h4><input id="ajFirma" class="nom" style="width:100%;height:46px;border-radius:13px;border:2px solid var(--line);background:var(--colbg);padding:0 12px;font-size:16px;font-weight:700" placeholder="Por ejemplo: Elisabeth" value="${esc(a.firma||'')}"></div>
       <div class="pie-copy">PorHacer ${VERSION} · © Copy</div>`;
     const enlazar = (id, k) => $$('#'+id+' button').forEach(b => b.onclick = async () => { a[k] = b.dataset.v; await this.guardar(); this.mas(); });
-    enlazar('ajInicio','inicio'); enlazar('ajVoz','idiomaVoz'); enlazar('ajFoto','calidadFoto'); enlazar('ajVid','calidadVideo');
+    enlazar('ajInicio','inicio'); enlazar('ajSonL','sonidoListas'); enlazar('ajPopL','popupLista'); enlazar('ajVoz','idiomaVoz'); enlazar('ajFoto','calidadFoto'); enlazar('ajVid','calidadVideo');
     $('#ajFirma').onchange = async e => { a.firma = e.target.value.trim(); await this.guardar(); };
   }
 };

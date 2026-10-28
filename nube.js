@@ -566,6 +566,20 @@ const Nube = {
     finally{ this._pend = false; this.pintarEstado(); }
   },
   // Al tocar la nubecita: qué significa y a dónde ir
+  // Fuerza a traer de la nube todo lo del tablero abierto (y las listas)
+  async bajarDeNube(){
+    if(!this.activa){ toast('Entra antes con tu cuenta'); return; }
+    if(!this.online){ toast('📴 Sin internet: inténtalo cuando vuelva la conexión'); return; }
+    toast('⬇️ Bajando lo último de la nube…', null, null, 15000);
+    try{
+      if((await this.pendientesMedia()).length) await this.subirPendiente(false);       // antes, que no se pierda nada
+      await Promise.race([this.db.waitForPendingWrites(), new Promise(r => setTimeout(r, 8000))]);
+      lsSet('ph-cache-tid', '');                                                     // así se vacía y se vuelve a descargar todo
+      await this.conectar(this.tid);
+      if(typeof Listas !== 'undefined'){ Listas._iniciado = false; Listas.vigilar(); }
+      setTimeout(() => toast('✅ Ya tienes en la app lo último de la nube'), 1500);
+    }catch(e){ console.warn(e); toast('⚠️ No se ha podido bajar. Prueba más tarde.'); }
+  },
   async explicarEstado(){
     const tb = this.tablero, gente = tb ? new Set([tb.duenoEmail, ...this.aceptados(tb)].filter(Boolean).map(e => e.toLowerCase())).size : 1;
     const pend = this.activa ? (await this.pendientesMedia().catch(() => [])).length : 0;
@@ -576,11 +590,12 @@ const Nube = {
       : ['✅', 'Todo al día', 'Todo lo que haces se guarda en la nube al momento' + (gente > 1 ? ' y lo ven las ' + gente + ' personas de este tablero.' : '.')];
     popup({ tit:'☁️ La nube',
       html:`<div class="nube-info"><div class="ni-ico">${est[0]}</div><b>${est[1]}</b><p>${esc(est[2])}</p>
-        ${this.activa ? `<button class="${pend ? 'btn-pri' : 'btn-sec'} ni-subir" id="niSubir">⬆️ Subir a la nube${pend ? ' (' + pend + ')' : ''}</button><p class="ni-ayuda">Revisa que todo lo de este móvil esté en la nube y sube lo que falte.</p>` : ''}
+        ${this.activa ? `<button class="${pend ? 'btn-pri' : 'btn-sec'} ni-subir" id="niSubir">⬆️ Subir a la nube${pend ? ' (' + pend + ')' : ''}</button><p class="ni-ayuda">Revisa que todo lo de este aparato esté en la nube y sube lo que falte.</p>
+          <button class="btn-sec ni-subir" id="niBajar">⬇️ Bajar de la nube</button><p class="ni-ayuda">Vuelve a traer a la app todo lo último que hay en la nube (tareas, personas, fotos…).</p>` : ''}
         ${tb ? `<p class="ni-tab">📋 Tablero: <b>${esc(this.nombreTablero(tb))}</b></p>` : ''}
         <p class="ni-cuenta">👤 ${esc(this.nombreYo())} · ${esc(this.email())}</p></div>`,
       botones:[{ txt:'📋 Tableros', val:'tab' }, { txt:'Vale', cls:'btn-pri', val:null }],
-      alAbrir:(c, fin) => { const b = $('#niSubir', c); if(b) b.onclick = () => { fin(null); this.subirPendiente(true); }; } })
+      alAbrir:(c, fin) => { const b = $('#niSubir', c); if(b) b.onclick = () => { fin(null); this.subirPendiente(true); }; const d = $('#niBajar', c); if(d) d.onclick = () => { fin(null); this.bajarDeNube(); }; } })
       .then(v => { if(v === 'tab'){ Ajustes.abrir(); Ajustes.tab('tableros'); } });
   },
   pantalla(html, alAbrir){

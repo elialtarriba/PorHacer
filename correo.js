@@ -108,19 +108,20 @@ const Correo = {
     const texto = `Hola ${p.nombre},\n\n${de} te ha asignado esta tarea:\n\n${this.textoTarea(t)}\n\n————————————\n\n👉 Ábrela en PorHacer (con sus fotos, vídeos y audios):\n${enlace}\n\nEntra con tu email: ${p.email}\n\n¡Gracias!\n${de}`;
     return this.enviar({ para:p.email, nombre:p.nombre, asunto:'📋 Nueva tarea: ' + t.titulo, html, texto });
   },
-  async recordatorio(t){
-    const p = persona(t.personaId); if(!p || !p.email) return;
+  async recordatorio(t, o = {}){
+    const p = o.p || persona(t.personaId); if(!p || !p.email) return;
+    const msg = (o.mensaje || '').trim();
     const de = this.remitente(), enlace = this.url(), r = rango(t), hoy = hoyIso();
     let cuando = '';
     if(t.fin && t.fin < hoy) cuando = 'La fecha prevista era el <b>' + fLarga(t.fin) + '</b>, así que cuando puedas, ¡ánimo! 💪';
     else if(t.fin === hoy) cuando = 'La fecha prevista es <b>hoy</b> ☀️';
     else if(t.fin) cuando = 'La fecha prevista es el <b>' + fLarga(t.fin) + '</b> (faltan ' + difDias(hoy, t.fin) + ' días).';
     const html = this.marco({ etiqueta:'🔔 Recordatorio', titulo:'Un recordatorio amable 😊',
-      saludo:`Hola <b>${esc(p.nombre)}</b>,<br><br>¿Qué tal va? Solo te recuerdo, con cariño, esta tarea que tienes pendiente.${cuando ? '<br><br>' + cuando : ''}`,
+      saludo:`Hola <b>${esc(p.nombre)}</b>,<br><br>¿Qué tal va? Solo te recuerdo, con cariño, esta tarea que tienes pendiente.${cuando ? '<br><br>' + cuando : ''}${msg ? `<div style="margin-top:14px;background:#fff7d6;border-left:4px solid #f5a623;border-radius:10px;padding:10px 14px;font-size:15px;line-height:1.5;color:#3a3a3e;white-space:pre-wrap;">💬 ${esc(msg)}</div>` : ''}`,
       cuerpo:this.fichaTarea(t), boton:{ txt:'Ver la tarea', url:enlace }, enlace,
       pie:`Cuando la acabes, márcala en la app con el cuadradito ✅ y así lo veremos todos.<br>¡Muchas gracias! — ${esc(de)}` });
     const cuandoTxt = cuando.replace(/<[^>]+>/g, '');
-    const texto = `Hola ${p.nombre},\n\n¿Qué tal va? Solo te recuerdo, con cariño, esta tarea que tienes pendiente.${cuandoTxt ? '\n\n' + cuandoTxt : ''}\n\n${this.textoTarea(t)}\n\n————————————\n\n👉 Ábrela en PorHacer:\n${enlace}\n\nCuando la acabes, márcala con el cuadradito ✅ y así lo veremos todos.\n\n¡Muchas gracias!\n${de}`;
+    const texto = `Hola ${p.nombre},\n\n¿Qué tal va? Solo te recuerdo, con cariño, esta tarea que tienes pendiente.${cuandoTxt ? '\n\n' + cuandoTxt : ''}${msg ? '\n\n💬 ' + msg : ''}\n\n${this.textoTarea(t)}\n\n————————————\n\n👉 Ábrela en PorHacer:\n${enlace}\n\nCuando la acabes, márcala con el cuadradito ✅ y así lo veremos todos.\n\n¡Muchas gracias!\n${de}`;
     return this.enviar({ para:p.email, nombre:p.nombre, asunto:'🔔 Recordatorio: ' + t.titulo, html, texto });
   },
   async invitacion(p, tablero){
