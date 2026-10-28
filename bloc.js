@@ -427,6 +427,32 @@ const Bloc = {
     };
   },
 
+  /* ---------- Tamaño de la letra ---------- */
+  TAMS: [[2, 'Pequeña'], [3, 'Normal'], [4, 'Mediana'], [5, 'Grande'], [6, 'Muy grande'], [7, 'Enorme']],
+  menuTam(b){
+    let m = $('#blocTamMenu');
+    if(m && m.classList.contains('on')){ this.cerrarMenuTam(); return; }
+    if(!m){ m = document.createElement('div'); m.id = 'blocTamMenu'; $('#blocBarra').appendChild(m); }
+    const act = this.tamActual();
+    m.innerHTML = this.TAMS.map(([n, t]) => `<button type="button" data-a="tam" data-t="${n}" class="${n === act ? 'on' : ''}"><font size="${n}">Aa</font><span>${t}</span></button>`).join('')
+      + '<button type="button" data-a="limpio" class="limpio">🧽 <span>Quitar el formato</span></button>';
+    const r = b.getBoundingClientRect(), rb = $('#blocBarra').getBoundingClientRect();
+    m.style.left = Math.max(4, r.left - rb.left) + 'px'; m.style.top = (r.bottom - rb.top + 4) + 'px';
+    m.classList.add('on');
+  },
+  cerrarMenuTam(){ const m = $('#blocTamMenu'); if(m) m.classList.remove('on'); },
+  tamActual(){ let n = 3; try{ const v = document.queryCommandValue('fontSize'); if(v && /^\d$/.test(v)) n = +v; }catch(e){} return n; },
+  tamano(n){
+    this.cerrarMenuTam();
+    const el = $('#blocHoja'); el.focus();
+    const s = getSelection();
+    if(this._rango && el.contains(this._rango.startContainer) && !(s.rangeCount && el.contains(s.anchorNode))){ s.removeAllRanges(); s.addRange(this._rango); }
+    try{ document.execCommand('styleWithCSS', false, false); }catch(e){}
+    document.execCommand('fontSize', false, String(n));
+    this.tam = n; this.pintarTam(); this.guardarLuego();
+  },
+  pintarTam(){ const b = $('#blocBarra [data-a=n]'); if(b){ const t = (this.TAMS.find(x => x[0] === this.tamActual()) || this.TAMS[1])[1]; b.innerHTML = 'Aa <small>▾</small>'; b.title = 'Tamaño de la letra: ' + t; } },
+
   /* ---------- Arranque ---------- */
   iniciar(){
     const el = $('#blocHoja');
@@ -442,11 +468,23 @@ const Bloc = {
     });
     // la barra: que no se pierda lo seleccionado al pulsar
     $('#blocBarra').addEventListener('mousedown', e => { if(e.target.closest('button')) e.preventDefault(); });
+    document.addEventListener('pointerdown', e => { if(!e.target.closest('#blocTamMenu, #blocBarra [data-a=n]')) this.cerrarMenuTam(); });
+    this.pintarTam();
+    $('#blocGuardar').onclick = async () => { clearTimeout(this._t); await this.guardar(); toast('💾 Bloc guardado'); };
+    // pasar de hoja deslizando el dedo
+    deslizarPaginas($('#blocHoja'), { soloDedo:true,
+      ignorar: t => !!t.closest('img'),
+      puede: dir => { if(!this.datos) return false; const i = this.datos.hojas.findIndex(h => h.id === this.hoja); return this.datos.hojas[i + dir] !== undefined; },
+      cont: () => $('#blocHoja'),
+      fondo: () => (this.actual() || {}).color || '#fff',
+      cambio: dir => { const i = this.datos.hojas.findIndex(h => h.id === this.hoja), h = this.datos.hojas[i + dir]; if(!h) return; this.cambiar(h.id); const t = $(`.bloc-tab[data-h="${h.id}"]`); t && t.scrollIntoView({ inline:'nearest', block:'nearest' }); } });
     $('#blocBarra').addEventListener('click', e => {
       const b = e.target.closest('button'); if(!b) return;
       const a = b.dataset.a;
       if(a === 'b') this.cmd('bold');
-      else if(a === 'n'){ this.cmd('removeFormat'); try{ if(document.queryCommandState('bold')) this.cmd('bold'); }catch(_){} }
+      else if(a === 'n') this.menuTam(b);
+      else if(a === 'tam'){ this.tamano(+b.dataset.t); }
+      else if(a === 'limpio'){ this.cerrarMenuTam(); this.cmd('removeFormat'); try{ if(document.queryCommandState('bold')) this.cmd('bold'); }catch(_){} }
       else if(a === 'check' || a === 'punto' || a === 'num') this.lista(a);
       else if(a === 'sub') this.cmd('hiliteColor', b.dataset.c);
       else if(a === 'nosub') this.cmd('hiliteColor', 'transparent');
@@ -465,7 +503,7 @@ const Bloc = {
     el.addEventListener('dragover', e => { if(e.dataTransfer && [...e.dataTransfer.types].includes('Files')) e.preventDefault(); });
     el.addEventListener('drop', e => { const fs = e.dataTransfer && e.dataTransfer.files; if(fs && fs.length){ e.preventDefault(); const r = document.caretRangeFromPoint ? document.caretRangeFromPoint(e.clientX, e.clientY) : null; if(r) this._rango = r; this.ponerFotos(fs); } });
     $('#blocFotoIn').onchange = e => { this.ponerFotos(e.target.files); e.target.value = ''; };
-    document.addEventListener('selectionchange', () => { if($('#bloc').classList.contains('abierto')) this.marcarBarra(); });
+    document.addEventListener('selectionchange', () => { if($('#bloc').classList.contains('abierto')){ this.marcarBarra(); this.pintarTam(); } });
     // tocar la casilla de una lista ☑
     el.addEventListener('click', e => {
       const li = e.target.closest("ul.casillas > li"); if(!li) return;

@@ -887,3 +887,31 @@ body.ya .columna, body.ya .tarjeta{animation:none}
 .lp-barra{height:5px;border-radius:4px;background:var(--line);margin-top:12px;overflow:hidden}
 .lp-barra i{display:block;height:100%;background:var(--accent);transform-origin:left;animation:lpBarra linear forwards}
 @keyframes lpBarra{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+
+/* ===== V7.1 ===== */
+/* pestañas del bloc: solo se deslizan de lado */
+.bloc-tabs{overflow-x:auto;overflow-y:hidden;touch-action:pan-x;overscroll-behavior:contain;min-height:48px;flex:none;align-items:flex-end}
+.bloc-hoja{touch-action:pan-y}
+#vListas{touch-action:pan-y}
+.bloc-guardar{flex:none;height:34px;padding:0 10px;font-size:13px}
+.hoja-bloc .bloc-estado{font-size:11px}
+@media (max-width:400px){ .hoja-bloc .hoja-cab b{font-size:16px} .hoja-bloc .bloc-estado{display:none} }
+/* tamaño de letra */
+.bloc-barra{position:relative}
+.bloc-tam small{font-size:9px;opacity:.7}
+#blocTamMenu{position:absolute;z-index:20;display:none;flex-direction:column;min-width:190px;padding:6px;border-radius:14px;background:var(--card);border:1px solid var(--line);box-shadow:0 10px 28px rgba(0,0,0,.2)}
+#blocTamMenu.on{display:flex}
+#blocTamMenu button{display:flex;align-items:center;gap:10px;height:auto;min-height:38px;padding:4px 10px;border-radius:10px;border:0;background:none;text-align:left;font-weight:800;color:var(--ink)}
+#blocTamMenu button.on{background:var(--colbg);box-shadow:inset 0 0 0 1.5px var(--accent)}
+#blocTamMenu button font{width:46px;text-align:center;line-height:1.1;color:var(--dark)}
+#blocTamMenu button span{font-size:14px}
+#blocTamMenu .limpio{border-top:1px solid var(--line);border-radius:0 0 10px 10px;margin-top:4px}
+.bloc-hoja font[size="1"],#blocTamMenu font[size="1"]{font-size:11px}
+.bloc-hoja font[size="2"],#blocTamMenu font[size="2"]{font-size:13.5px}
+.bloc-hoja font[size="3"],#blocTamMenu font[size="3"]{font-size:16.5px}
+.bloc-hoja font[size="4"],#blocTamMenu font[size="4"]{font-size:19.5px}
+.bloc-hoja font[size="5"],#blocTamMenu font[size="5"]{font-size:23px}
+.bloc-hoja font[size="6"],#blocTamMenu font[size="6"]{font-size:28px}
+.bloc-hoja font[size="7"],#blocTamMenu font[size="7"]{font-size:34px}
+.bloc-pdf .bloc-hoja font[size="7"]{font-size:34px}
+.ls-txt span{white-space:pre-wrap}

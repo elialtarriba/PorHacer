@@ -10,9 +10,9 @@
 <meta name="theme-color" content="#eeeff1">
 <title>PorHacer</title>
 <link rel="icon" href="logo.png" type="image/png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png?v=7">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=71">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="estilos.css?v=7">
+<link rel="stylesheet" href="estilos.css?v=71">
 </head>
 <body>
 
@@ -44,7 +44,7 @@
         <button class="ibtn" id="btnAjustes" title="Configuración" aria-label="Configuración"></button>
       </div>
       <div class="insignias">
-            <span class="ver" id="verTxt">V7</span>
+            <span class="ver" id="verTxt">V7.1</span>
             <button class="nube-estado off" id="nubeEstado" hidden title="Nube" aria-label="Nube"></button>
           </div>
     </div>
@@ -79,7 +79,7 @@
   </header>
   <div class="ls-add">
     <button class="ls-mas" id="lsMas" aria-label="Añadir">＋</button>
-    <input id="lsNuevo" placeholder="Agregar un punto a la lista" enterkeyhint="done" autocomplete="off" maxlength="200">
+    <input id="lsNuevo" placeholder="Agregar un punto a la lista" enterkeyhint="done" autocomplete="off" maxlength="600">
   </div>
   <div class="ls-cuerpo" id="lsCuerpo"></div>
   <input type="file" id="lsFondoIn" accept="image/*" hidden>
@@ -297,6 +297,7 @@
       <span class="cab-ico bloc-ico">📒</span>
       <b>Bloc de notas</b>
       <small class="bloc-estado" id="blocEstado"></small>
+      <button class="mini-btn bloc-guardar" id="blocGuardar" title="Guardar">💾 Guardar</button>
       <button class="cerrar" id="blocMenu" aria-label="Opciones">⋯</button>
       <button class="cerrar" id="blocX" aria-label="Cerrar con candado">✕</button>
     </div>
@@ -304,7 +305,7 @@
     <div class="bloc-papel" id="blocPapel">
       <div class="bloc-barra" id="blocBarra">
         <button type="button" data-a="b" id="blocB" title="Negrita"><b>B</b></button>
-        <button type="button" data-a="n" title="Texto normal">Aa</button>
+        <button type="button" data-a="n" class="bloc-tam" title="Tamaño de la letra">Aa</button>
         <span class="bloc-sep"></span>
         <button type="button" data-a="check" title="Lista con casillas">☑</button>
         <button type="button" data-a="punto" title="Lista con puntos">•≡</button>
@@ -349,24 +350,24 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="iconos.js?v=7"></script>
-<script src="temas.js?v=7"></script>
-<script src="db.js?v=7"></script>
-<script src="firebase-config.js?v=7"></script>
-<script src="email-config.js?v=7"></script>
-<script src="correo.js?v=7"></script>
-<script src="audio.js?v=7"></script>
-<script src="listas.js?v=7"></script>
-<script src="bloc.js?v=7"></script>
-<script src="avisos.js?v=7"></script>
-<script src="fiesta.js?v=7"></script>
-<script src="nube.js?v=7"></script>
-<script src="fotos.js?v=7"></script>
-<script src="videos.js?v=7"></script>
-<script src="voz.js?v=7"></script>
-<script src="calendario.js?v=7"></script>
-<script src="ajustes.js?v=7"></script>
-<script src="copias.js?v=7"></script>
-<script src="app.js?v=7"></script>
+<script src="iconos.js?v=71"></script>
+<script src="temas.js?v=71"></script>
+<script src="db.js?v=71"></script>
+<script src="firebase-config.js?v=71"></script>
+<script src="email-config.js?v=71"></script>
+<script src="correo.js?v=71"></script>
+<script src="audio.js?v=71"></script>
+<script src="listas.js?v=71"></script>
+<script src="bloc.js?v=71"></script>
+<script src="avisos.js?v=71"></script>
+<script src="fiesta.js?v=71"></script>
+<script src="nube.js?v=71"></script>
+<script src="fotos.js?v=71"></script>
+<script src="videos.js?v=71"></script>
+<script src="voz.js?v=71"></script>
+<script src="calendario.js?v=71"></script>
+<script src="ajustes.js?v=71"></script>
+<script src="copias.js?v=71"></script>
+<script src="app.js?v=71"></script>
 </body>
 </html>

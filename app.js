@@ -1,6 +1,6 @@
 /* PorHacer · app principal: tablero de columnas, tareas y editor */
 
-const VERSION = 'V7';
+const VERSION = 'V7.1';
 const $ = (s, r=document) => r.querySelector(s);
 const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -77,6 +77,83 @@ function toast(txt, accion, fn, ms=3200){
     el.scrollLeft += e.deltaY; e.preventDefault();
   }, { passive:false });
 })();
+/* ---------- Pasar la hoja con el dedo (efecto de página, como en el calendario) ---------- */
+function paginaEmpieza(cont, dir, cambio, fondo){
+  const r = cont.getBoundingClientRect(), W = r.width, H = r.height;
+  if(W < 10 || H < 10){ cambio(dir); return null; }
+  const viejo = cont.cloneNode(true); viejo.removeAttribute('id'); $$('[id]', viejo).forEach(x => x.removeAttribute('id'));
+  const scroll = cont.scrollTop;
+  cambio(dir);
+  const wrap = document.createElement('div'); wrap.className = 'curl-wrap';
+  Object.assign(wrap.style, { left:r.left + 'px', top:r.top + 'px', width:W + 'px', height:H + 'px', zIndex:700 });
+  const old = document.createElement('div'); old.className = 'curl-old'; old.style.background = fondo || '#fff';
+  Object.assign(viejo.style, { position:'absolute', inset:'0', width:'100%', height:'100%', overflow:'hidden', margin:'0', transform:'none' });
+  old.appendChild(viejo);
+  const mk = cl => { const d = document.createElement('div'); d.className = cl; return d; };
+  const cast = mk('curl-strip'), oldShade = mk('curl-strip'), flap = mk('curl-strip'), rim = mk('curl-strip');
+  wrap.append(cast, old, oldShade, flap, rim); document.body.appendChild(wrap);
+  viejo.scrollTop = scroll;
+  const raiz = getComputedStyle(document.documentElement), tone = raiz.getPropertyValue('--dark').trim() || '#3a3a3c';
+  const paper = `color-mix(in srgb, ${tone}, #fff 88%)`;
+  const X = x => dir > 0 ? x : W - x;
+  const strip = (node, x0, x1, w, side, bg, clip) => {
+    const sx0 = X(x0), sx1 = X(x1), sd = dir > 0 ? side : -side;
+    node.style.left = (sd < 0 ? sx0 - w : sx0) + 'px'; node.style.width = Math.max(0, w) + 'px';
+    node.style.transform = `skewX(${Math.atan((sx1 - sx0) / H) * 180 / Math.PI}deg)`;
+    node.style.background = bg(sd < 0 ? '90deg' : '270deg'); node.style.clipPath = clip ? clip(sd) : 'none';
+  };
+  const ctx = { dir, W, H, p:0, wrap, revert: () => cambio(-dir) };
+  ctx.render = p => {
+    ctx.p = p;
+    const tilt = Math.min(H, 700) * 0.24 * (0.35 + 0.65 * Math.sin(Math.PI * Math.min(1, p * 1.05))) * (p < .02 ? p / .02 : 1);
+    const fx = (W + tilt) * (1 - p) - tilt * p, top = fx + tilt, bot = fx - tilt;
+    const wT = Math.max(0, W - top) * 0.62, wB = Math.max(0, W - bot) * 0.62, wA = (wT + wB) / 2;
+    old.style.clipPath = `polygon(${X(0)}px 0,${X(top)}px 0,${X(bot)}px ${H}px,${X(0)}px ${H}px)`;
+    strip(flap, top, bot, wA, -1, deg => `linear-gradient(${deg}, color-mix(in srgb, ${paper}, ${tone} 38%) 0%, color-mix(in srgb, ${paper}, ${tone} 14%) 7%, ${paper} 22%, #ffffff 44%, ${paper} 62%, color-mix(in srgb, ${paper}, ${tone} 16%) 84%, color-mix(in srgb, ${paper}, ${tone} 34%) 100%)`,
+      sd => sd < 0 ? `polygon(${wA - wT}px 0,100% 0,100% 100%,${wA - wB}px 100%)` : `polygon(0 0,${wT}px 0,${wB}px 100%,0 100%)`);
+    strip(rim, top, bot, 3, -1, deg => `linear-gradient(${deg}, rgba(0,0,0,0), color-mix(in srgb, ${tone}, #000 8%))`);
+    strip(cast, top, bot, 46 * (0.4 + 0.6 * Math.sin(Math.PI * p)), 1, deg => `linear-gradient(${deg === '90deg' ? '270deg' : '90deg'}, rgba(0,0,0,0), rgba(30,30,40,.22))`);
+    const oT = top - wT, oB = bot - wB;
+    strip(oldShade, oT, oB, 22, -1, deg => `linear-gradient(${deg === '90deg' ? '270deg' : '90deg'}, rgba(30,30,40,.15), rgba(0,0,0,0))`);
+    oldShade.style.opacity = (oT < W * 0.98 && p > 0.01) ? 1 : 0;
+  };
+  ctx.render(0); return ctx;
+}
+function paginaA(ctx, target, dur, hecho){
+  const from = ctx.p, t0 = performance.now(), d = Math.max(140, dur * Math.abs(target - from));
+  const ease = t => 1 - Math.pow(1 - t, 3);
+  const frame = now => { const q = Math.min(1, (now - t0) / d); ctx.render(from + (target - from) * ease(q));
+    if(q < 1){ requestAnimationFrame(frame); return; } ctx.wrap.remove(); if(target < 1) ctx.revert(); if(hecho) hecho(); };
+  requestAnimationFrame(frame);
+}
+// zona: donde se desliza · o: { cont(), puede(dir), cambio(dir), fondo(), ignorar(target), soloDedo }
+function deslizarPaginas(zona, o){
+  let D = null, pasando = false;
+  zona.addEventListener('pointerdown', e => {
+    if(pasando || e.button > 0 || (o.soloDedo && e.pointerType === 'mouse') || (o.ignorar && o.ignorar(e.target))) return;
+    D = { x:e.clientX, y:e.clientY, id:e.pointerId, ctx:null, lx:e.clientX, lt:performance.now(), v:0 };
+  });
+  zona.addEventListener('pointermove', e => {
+    if(!D || e.pointerId !== D.id) return;
+    const dx = e.clientX - D.x, dy = e.clientY - D.y;
+    if(!D.ctx){
+      if(Math.abs(dx) < 14) return;
+      if(Math.abs(dy) > Math.abs(dx) * 0.7){ D = null; return; }
+      const dir = dx < 0 ? 1 : -1;
+      if(!o.puede(dir)){ D = null; return; }
+      pasando = true;
+      D.ctx = paginaEmpieza(o.cont(), dir, o.cambio, o.fondo ? o.fondo() : '#fff'); if(!D.ctx){ pasando = false; D = null; return; }
+      try{ zona.setPointerCapture(e.pointerId); }catch(_){}
+      const s = getSelection(); try{ s.removeAllRanges(); }catch(_){}
+    }
+    const now = performance.now(); D.v = (e.clientX - D.lx) / Math.max(1, now - D.lt); D.lx = e.clientX; D.lt = now;
+    D.ctx.render(Math.max(0, Math.min(1, (D.ctx.dir > 0 ? -dx : dx) / (D.ctx.W * 0.85))));
+  });
+  const fin = () => { if(!D) return; const d = D; D = null; if(!d.ctx) return;
+    const golpe = (d.ctx.dir > 0 ? -d.v : d.v) > 0.6;
+    paginaA(d.ctx, (d.ctx.p > 0.4 || (golpe && d.ctx.p > 0.08)) ? 1 : 0, 600, () => { pasando = false; }); };
+  zona.addEventListener('pointerup', fin); zona.addEventListener('pointercancel', fin);
+}
 function popup({ tit, html, botones, alAbrir }){
   return new Promise(ok => {
     $('#popTit').textContent = tit || ''; $('#popTit').hidden = !tit;

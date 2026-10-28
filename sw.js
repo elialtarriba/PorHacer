@@ -1,11 +1,11 @@
 // PorHacer · service worker: la app funciona sin conexión
-const CACHE = 'porhacer-v7';
+const CACHE = 'porhacer-v71';
 const ARCHIVOS = [
-  './', './index.html', './manifest.json', './estilos.css?v=7',
-  './iconos.js?v=7', './temas.js?v=7', './db.js?v=7', './firebase-config.js?v=7', './email-config.js?v=7', './nube.js?v=7',
-  './correo.js?v=7', './audio.js?v=7', './fiesta.js?v=7', './avisos.js?v=7', './bloc.js?v=7', './listas.js?v=7', './listas.png', './lame.min.js', './html2canvas.min.js', './jspdf.min.js',
-  './fotos.js?v=7', './videos.js?v=7', './voz.js?v=7', './calendario.js?v=7', './ajustes.js?v=7',
-  './copias.js?v=7', './app.js?v=7',
+  './', './index.html', './manifest.json', './estilos.css?v=71',
+  './iconos.js?v=71', './temas.js?v=71', './db.js?v=71', './firebase-config.js?v=71', './email-config.js?v=71', './nube.js?v=71',
+  './correo.js?v=71', './audio.js?v=71', './fiesta.js?v=71', './avisos.js?v=71', './bloc.js?v=71', './listas.js?v=71', './listas.png', './lame.min.js', './html2canvas.min.js', './jspdf.min.js',
+  './fotos.js?v=71', './videos.js?v=71', './voz.js?v=71', './calendario.js?v=71', './ajustes.js?v=71',
+  './copias.js?v=71', './app.js?v=71',
   './logo.png', './icon-192.png', './icon-512.png', './apple-touch-icon.png'
 ];
 // Librería de Firebase: también se guarda para poder abrir la app sin internet

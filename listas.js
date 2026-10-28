@@ -165,7 +165,7 @@ const Listas = {
     notas.forEach(([f, t]) => { const o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(.0001, t0 + t); g.gain.exponentialRampToValueAtTime(.12, t0 + t + .01); g.gain.exponentialRampToValueAtTime(.0001, t0 + t + .25); o.connect(g); g.connect(ac.destination); o.start(t0 + t); o.stop(t0 + t + .3); }); }catch(e){} },
   async editar(id){
     const [l, x] = this.item(id); if(!x) return;
-    const v = await popup({ tit:'✏️ Punto de la lista', html:`<input id="lsEdT" value="${esc(x.t)}" maxlength="200"><input id="lsEdN" value="${esc(x.nota || '')}" placeholder="Nota (opcional)" maxlength="200">
+    const v = await popup({ tit:'✏️ Punto de la lista', html:`<input id="lsEdT" value="${esc(x.t)}" maxlength="600"><input id="lsEdN" value="${esc(x.nota || '')}" placeholder="Nota (opcional)" maxlength="600">
       <label class="check" style="margin-top:10px"><input type="checkbox" id="lsEdI" ${x.imp ? 'checked' : ''}><span class="caja"></span><span>⭐ Importante</span></label>
       <div class="ls-ed-acc"><button class="mini-btn" data-v="enviar">📋 Pasar al PorHacer</button><button class="mini-btn peligro" data-v="borrar">🗑 Borrar</button></div>`,
       botones:[{ txt:'Cancelar', val:null }, { txt:'Guardar', cls:'btn-pri', val:c => ({ t:$('#lsEdT', c).value.trim(), nota:$('#lsEdN', c).value.trim(), imp:$('#lsEdI', c).checked }) }],
@@ -370,6 +370,13 @@ const Listas = {
     // tocar fuera del recuadro: se esconde el teclado
     $('#vListas').addEventListener('pointerdown', e => { if(!e.target.closest('.ls-add') && document.activeElement === inp) inp.blur(); });
     this.iniciarDeslizar();
+    // pasar a la lista siguiente o anterior deslizando (fuera de los puntos)
+    deslizarPaginas($('#vListas'), {
+      ignorar: t => !!t.closest('.ls-item, .ls-add, button, input, .ls-reord'),
+      puede: dir => { if(this.datos.length < 2) return false; const i = this.datos.findIndex(l => l.id === (this.lista() || {}).id); return this.datos[i + dir] !== undefined; },
+      cont: () => $('#vListas'),
+      fondo: () => { const v = getComputedStyle($('#vListas')); return v.backgroundImage !== 'none' ? v.backgroundImage + ' center/cover no-repeat, ' + v.backgroundColor : v.backgroundColor; },
+      cambio: dir => { const i = this.datos.findIndex(l => l.id === (this.lista() || {}).id), l = this.datos[i + dir]; if(!l) return; this.actual = l.id; lsSet('ph-lista', l.id); this.reordenar = false; this.pintar(); } });
     this.lsCargar();
     setInterval(() => this.vigilar(), 1500);
   }
