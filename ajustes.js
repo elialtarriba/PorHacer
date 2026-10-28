@@ -17,9 +17,11 @@ const Ajustes = {
   /* Temas rápidos */
   temas(){
     const a = App.ajustes;
+    const titulo = g => `<h4 class="temas-grupo">${g === 'blanco' ? '⚪ Con fondo blanco' : '🎨 Con fondo de color'}</h4>`;
+    let grupoAnt = null;
     $('#ajTemas').innerHTML = Object.entries(TEMAS).map(([k, t]) => {
-      const c = t.c;
-      return `<button class="tema ${a.tema===k?'on':''}" data-k="${k}">
+      const c = t.c, g = t.grupo || 'color', cab = g !== grupoAnt ? titulo(g) : ''; grupoAnt = g;
+      return cab + `<button class="tema ${a.tema===k?'on':''}" data-k="${k}">
         <div class="prev" style="background:linear-gradient(180deg,${c.bg},${c.bg2})">
           <i style="background:${c.card};border-color:#e5484d"></i><i style="background:${c.card};border-color:#3b82f6"></i><i style="background:${c.card};border-color:#22a55a"></i>
           <em style="background:linear-gradient(180deg,${c.accent2},${c.accent});box-shadow:0 0 0 3px ${c.dark}"></em>

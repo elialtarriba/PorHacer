@@ -1,6 +1,6 @@
 /* PorHacer · app principal: tablero de columnas, tareas y editor */
 
-const VERSION = 'V4.3';
+const VERSION = 'V4.6';
 const $ = (s, r=document) => r.querySelector(s);
 const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -56,6 +56,27 @@ function toast(txt, accion, fn, ms=3200){
   t.classList.add('ver'); clearTimeout(_toastT);
   _toastT = setTimeout(() => t.classList.remove('ver'), accion ? Math.max(ms, 6000) : ms);
 }
+/* Con el ratón: arrastrar para mover las barras de pestañas y la rueda para ir de lado */
+(function(){
+  const SEL = '.tabs-scroll, .chips, .tabs';
+  let D = null;
+  document.addEventListener('pointerdown', e => {
+    if(e.pointerType !== 'mouse' || e.button !== 0) return;
+    const el = e.target.closest(SEL); if(!el || el.scrollWidth <= el.clientWidth + 2) return;
+    D = { el, x:e.clientX, sl:el.scrollLeft, movido:false };
+  });
+  document.addEventListener('pointermove', e => {
+    if(!D) return; const dx = e.clientX - D.x;
+    if(!D.movido && Math.abs(dx) < 6) return;
+    D.movido = true; D.el.classList.add('arrastrando'); D.el.scrollLeft = D.sl - dx;
+  });
+  const fin = () => { if(!D) return; const d = D; D = null; d.el.classList.remove('arrastrando'); if(d.movido){ const parar = ev => { ev.stopPropagation(); ev.preventDefault(); }; addEventListener('click', parar, { capture:true, once:true }); setTimeout(() => removeEventListener('click', parar, { capture:true }), 50); } };
+  document.addEventListener('pointerup', fin); document.addEventListener('pointercancel', fin);
+  document.addEventListener('wheel', e => {
+    const el = e.target.closest(SEL); if(!el || el.scrollWidth <= el.clientWidth + 2 || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+    el.scrollLeft += e.deltaY; e.preventDefault();
+  }, { passive:false });
+})();
 function popup({ tit, html, botones, alAbrir }){
   return new Promise(ok => {
     $('#popTit').textContent = tit || ''; $('#popTit').hidden = !tit;

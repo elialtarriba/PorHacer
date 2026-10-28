@@ -37,16 +37,18 @@ const Cal = {
       const golpe = (d.ctx.dir > 0 ? -d.v : d.v) > 0.6;
       this.hojaA(d.ctx, (d.ctx.p > 0.45 || (golpe && d.ctx.p > 0.08)) ? 1 : 0, 650, () => { this.pasando = false; this.swipeAt = Date.now(); });
     };
+    $('#calTabs').onclick = () => this.elegirTableros();
     c.addEventListener('pointerup', fin); c.addEventListener('pointercancel', fin);
     c.addEventListener('click', e => {
       if(this.swipeAt && Date.now() - this.swipeAt < 400) return;     // venía de pasar la hoja
-      const b = e.target.closest('[data-t]'); if(b){ e.stopPropagation(); abrirEditor(b.dataset.t); return; }
+      const bola = e.target.closest('[data-tb]'); if(bola){ e.stopPropagation(); this.burbuja(bola); return; }
+      const b = e.target.closest('[data-t]'); if(b){ e.stopPropagation(); if(b.dataset.tid && typeof Nube !== 'undefined' && b.dataset.tid !== Nube.tid) this.abrirDeOtro(b.dataset.tid, b.dataset.t); else abrirEditor(b.dataset.t); return; }
       const nueva = e.target.closest('[data-nueva]'); if(nueva){ this.nuevaEn(nueva.dataset.nueva); return; }
       const d = e.target.closest('[data-d]'); if(d){ this.fecha = deIso(d.dataset.d); this.cambiarModo('dia'); return; }
       const m = e.target.closest('[data-m]'); if(m){ const [y,mm] = m.dataset.m.split('-').map(Number); this.fecha = new Date(y, mm, 1); this.cambiarModo('mes'); }
     });
   },
-  abrir(){ $('#vTablero').classList.remove('activa'); $('#vCal').classList.add('activa'); $('#fab').style.display='none'; this.pintar(); },
+  abrir(){ $('#vTablero').classList.remove('activa'); $('#vCal').classList.add('activa'); $('#fab').style.display='none'; this.pintar(); this.cargarOtros(true); },
   cerrar(){ $('#vCal').classList.remove('activa'); $('#vTablero').classList.add('activa'); $('#fab').style.display=''; pintarTodo(); },
   async cambiarModo(m){ this.modo = m; App.ajustes.calModo = m; guardarAjustes(); this.pintar(); },
   cambio(n){
@@ -124,14 +126,102 @@ const Cal = {
     await abrirEditor(null);
     $('#edIni').value = dia; $('#edFin').value = dia; pintarDur();
   },
+  /* ----- Varios tableros a la vez ----- */
+  otros: {},                       // tid → { tareas, cols, borde, cargado }
+  todosTab(){ return (typeof Nube !== 'undefined' && Nube.activa) ? [...Nube.misTableros(), ...Nube.compartidos()] : []; },
+  hayTableros(){ return this.todosTab().length > 1 && !(typeof Azure !== 'undefined' && Azure.activo); },
+  elegidos(){
+    if(!this.hayTableros()) return [null];
+    const ids = this.todosTab().map(t => t.id);
+    let l = []; try{ l = JSON.parse(lsGet('ph-cal-tabs') || '[]'); }catch(e){}
+    l = l.filter(x => ids.includes(x));
+    return l.length ? l : [Nube.tid];
+  },
+  colorTab(tid){
+    const P = ['#e5484d','#3b82f6','#f59e0b','#22a55a','#8b5cf6','#ec4899','#14b8a6','#a16207','#0ea5e9','#64748b','#84cc16','#f97316'];
+    const i = this.todosTab().findIndex(t => t.id === tid); return P[(i < 0 ? 0 : i) % P.length];
+  },
+  nombreTab(tid){ return Nube.nombreTablero(Nube.tableros[tid]); },
+  inicialTab(tid){ const n = this.nombreTab(tid).replace(/^\s*tablero\s+(de|del|de la)\s+/i, '').trim(); return ([...n][0] || '?').toUpperCase(); },
+  bola(x, varios){
+    if(!varios || !x.tid) return '';
+    return `<i class="tb-bola" data-tb="${x.tid}" style="background:${this.colorTab(x.tid)}" title="${esc(this.nombreTab(x.tid))}">${esc(this.inicialTab(x.tid))}</i>`;
+  },
+  burbuja(el){
+    let b = $('#tbBurbuja'); if(!b){ b = document.createElement('div'); b.id = 'tbBurbuja'; document.body.appendChild(b); }
+    const tid = el.dataset.tb, r = el.getBoundingClientRect();
+    b.innerHTML = `<i style="background:${this.colorTab(tid)}">${esc(this.inicialTab(tid))}</i>📋 ${esc(this.nombreTab(tid))}`;
+    b.className = 'on';
+    const w = Math.min(innerWidth - 20, b.offsetWidth);
+    b.style.left = Math.max(10, Math.min(innerWidth - w - 10, r.left + r.width / 2 - w / 2)) + 'px';
+    b.style.top = (r.top > 70 ? r.top - 42 : r.bottom + 8) + 'px';
+    clearTimeout(this._bT); this._bT = setTimeout(() => b.className = '', 2600);
+  },
+  // Lee las tareas de los otros tableros elegidos (las del abierto ya están en el móvil)
+  async cargarOtros(forzar){
+    if(!this.hayTableros()) return;
+    const faltan = this.elegidos().filter(tid => tid !== Nube.tid && (forzar || !this.otros[tid]));
+    if(!faltan.length) return;
+    this.cargando = true; this.pintarTabs();
+    await Promise.all(faltan.map(async tid => {
+      try{
+        const [ts, cf] = await Promise.all([Nube.colDe(tid, 'tareas').get(), Nube.colDe(tid, 'config').doc('tablero').get().catch(() => null)]);
+        const c = cf && cf.exists ? cf.data() : {};
+        this.otros[tid] = { tareas: ts.docs.map(x => x.data()), cols: c.columnas || COLUMNAS_INICIO, borde: c.bordeColumna !== undefined ? c.bordeColumna : App.ajustes.bordeColumna, cargado: Date.now() };
+      }catch(e){ console.warn('calendario', tid, e); }
+    }));
+    this.cargando = false;
+    if($('#vCal').classList.contains('activa')) this.pintar();
+  },
+  pintarTabs(){
+    const el = $('#calTabs'); if(!el) return;
+    el.hidden = !this.hayTableros(); if(el.hidden) return;
+    const sel = this.elegidos(), n = sel.length, todos = this.todosTab().length;
+    const txt = n === 1 ? (sel[0] === Nube.tid ? 'Este tablero' : this.nombreTab(sel[0])) : n === todos ? 'Todos los tableros' : n + ' tableros';
+    el.innerHTML = `<span class="ct-lbl">📋 ${esc(txt)}</span><span class="ct-bolas">${sel.map(tid => `<i style="background:${this.colorTab(tid)}">${esc(this.inicialTab(tid))}</i>`).join('')}</span>${this.cargando ? '<span class="ct-carga">⏳</span>' : ''}<span class="ct-flecha">▾</span>`;
+  },
+  async elegirTableros(){
+    const lista = this.todosTab(), sel = new Set(this.elegidos());
+    const fila = t => `<label class="ct-op"><input type="checkbox" value="${t.id}" ${sel.has(t.id) ? 'checked' : ''}>
+      <i style="background:${this.colorTab(t.id)}">${esc(this.inicialTab(t.id))}</i>
+      <span><b>${esc(Nube.nombreTablero(t))}</b><small>${t.id === Nube.tid ? 'Abierto ahora' : Nube.esDueno(t) ? 'Tuyo' : 'Compartido contigo'}</small></span></label>`;
+    const v = await popup({ tit:'📅 ¿Qué tableros quieres ver?',
+      html:`<p class="aj-ayuda" style="margin:0 0 8px">Elige uno, varios o todos. Cada tarea llevará una redonda con la inicial de su tablero.</p>
+        <div class="ct-rapido"><button class="mini-btn" data-r="todos">✓ Todos</button><button class="mini-btn" data-r="este">Solo este</button></div>
+        <div class="ct-lista">${lista.map(fila).join('')}</div>`,
+      botones:[{ txt:'Cancelar', val:null }, { txt:'Ver', cls:'btn-pri', val:c => $$('.ct-lista input:checked', c).map(i => i.value),
+        validar:c => { if(!$$('.ct-lista input:checked', c).length){ toast('Elige al menos un tablero'); return false; } return true; } }],
+      alAbrir:c => { $$('[data-r]', c).forEach(b => b.onclick = () => $$('.ct-lista input', c).forEach(i => i.checked = b.dataset.r === 'todos' || i.value === Nube.tid)); } });
+    if(!v) return;
+    lsSet('ph-cal-tabs', JSON.stringify(v));
+    this.pintar(); this.cargarOtros(false);
+  },
+  async abrirDeOtro(tid, id){
+    const nom = this.nombreTab(tid);
+    const ok = await popConfirmar('📋 Tablero «' + nom + '»', 'Esta tarea es del tablero «' + nom + '». Para abrirla vamos a ese tablero.', 'Ir y abrirla');
+    if(!ok) return;
+    await Nube.conectar(tid);
+    for(let i = 0; i < 40 && !App.tareas.some(t => t.id === id); i++) await new Promise(r => setTimeout(r, 150));
+    if(App.tareas.some(t => t.id === id)) abrirEditor(id); else toast('No he encontrado la tarea');
+  },
+  borde(x){ if(!x.tid || x.tid === (typeof Nube !== 'undefined' && Nube.tid)) return bordeDe(x.t); const o = this.otros[x.tid]; return o && o.borde ? x.col.color : (x.t.color ? mezcla(x.t.color,'#000',.25) : 'var(--line)'); },
   // tareas con fecha que se ven (columnas visibles + filtro del tablero)
   tareas(){
-    return App.tareas.filter(t => rango(t) && colDe(t.colId).visible && pasaFiltro(t))
-      .map(t => ({ t, r: rango(t) }))
-      .sort((a,b) => a.r[0].localeCompare(b.r[0]) || difDias(b.r[0],b.r[1]) - difDias(a.r[0],a.r[1]));
+    const out = [], sel = this.elegidos();
+    for(const tid of sel){
+      if(!tid || tid === Nube.tid){
+        App.tareas.filter(t => rango(t) && colDe(t.colId).visible && pasaFiltro(t)).forEach(t => out.push({ t, r:rango(t), tid, col:colDe(t.colId) }));
+      } else {
+        const o = this.otros[tid]; if(!o) continue;
+        o.tareas.forEach(t => { const r = rango(t); if(!r) return; const col = o.cols.find(c => c.id === t.colId) || o.cols[0]; if(!col || col.visible === false) return; out.push({ t, r, tid, col }); });
+      }
+    }
+    this.varios = sel.length > 1;
+    return out.sort((a,b) => a.r[0].localeCompare(b.r[0]) || difDias(b.r[0],b.r[1]) - difDias(a.r[0],a.r[1]));
   },
   pintar(){
     $$('#calModo button').forEach(b => b.classList.toggle('on', b.dataset.m === this.modo));
+    this.pintarTabs(); const bb = $('#tbBurbuja'); if(bb) bb.className = '';
     const c = $('#calCuerpo');
     if(this.modo === 'dia') c.innerHTML = this.htmlDia();
     else if(this.modo === 'mes') c.innerHTML = this.htmlMes();
@@ -174,9 +264,9 @@ const Cal = {
         const cls = ['dia', dd.getMonth()!==m?'fuera':'', di===hoy?'hoy':'', i>=5?'finde':''].join(' ');
         return `<div class="${cls}" data-d="${di}" style="min-height:${alto}px"><span class="num">${dd.getDate()}</span>${extra[i] ? `<span class="mas-n" style="left:4px;bottom:3px">+${extra[i]}</span>`:''}</div>`;
       }).join('') + '<div class="barras">' + segs.filter(z => z.k < MAX).map(z => {
-        const t = z.t, fondo = fondoTarea(t.color) || '#ffffff';
-        const cls = ['barra-t', z.r[0] < a ? 'cont-izq' : '', z.r[1] > b ? 'cont-der' : ''].join(' ');
-        return `<div class="${cls}" data-t="${t.id}" title="${esc(t.titulo)}" style="left:calc(${z.s/7*100}% + 2px);width:calc(${(z.e-z.s+1)/7*100}% - 4px);top:${z.k*22}px;background:${fondo};border-color:${bordeDe(t)}">${esc(t.titulo)}</div>`;
+        const t = z.t, fondo = fondoTarea(t.color) || '#ffffff', bola = this.bola(z, this.varios);
+        const cls = ['barra-t', z.r[0] < a ? 'cont-izq' : '', z.r[1] > b ? 'cont-der' : '', bola ? 'con-tb' : ''].join(' ');
+        return `<div class="${cls}" data-t="${t.id}" ${z.tid ? `data-tid="${z.tid}"` : ''} title="${esc(t.titulo)}" style="left:calc(${z.s/7*100}% + 2px);width:calc(${(z.e-z.s+1)/7*100}% - 4px);top:${z.k*22}px;background:${fondo};border-color:${this.borde(z)}">${esc(t.titulo)}${bola}</div>`;
       }).join('') + '</div></div>';
     }
     return html + '</div>';
@@ -200,10 +290,10 @@ const Cal = {
         const ts = delMes.filter(x => x.r[0] <= s && s <= x.r[1]).slice(0, 3);
         let st = '';
         if(ts.length){
-          const cs = ts.map(x => fondoTarea(x.t.color) || mezcla(colDe(x.t.colId).color,'#ffffff',.6));
+          const cs = ts.map(x => fondoTarea(x.t.color) || mezcla(x.col.color,'#ffffff',.6));
           st = cs.length === 1 ? `background:${cs[0]}` : `background:linear-gradient(135deg,${cs.map((c,i)=>`${c} ${i/cs.length*100}% ${(i+1)/cs.length*100}%`).join(',')})`;
         }
-        celdas += `<span class="${ts.length?'c':''} ${s===hoy?'hoy':''}" style="${st}">${di}${ts.length ? `<i style="background:${bordeDe(ts[0].t)}"></i>` : ''}</span>`;
+        celdas += `<span class="${ts.length?'c':''} ${s===hoy?'hoy':''}" style="${st}">${di}${ts.length ? `<i style="background:${this.borde(ts[0])}"></i>` : ''}</span>`;
       }
       const act = ahora.getFullYear()===y && ahora.getMonth()===m;
       html += `<div class="mmes ${act?'actual':''}" data-m="${y}-${m}"><h5><span>${MESES[m]} <em class="anio-de">${y}</em></span> <small>${delMes.length ? delMes.length+' 📋' : ''}</small></h5><div class="mgrid">${celdas}</div></div>`;
@@ -219,10 +309,11 @@ const Cal = {
     $('#calSub').textContent = MESES[d.getMonth()] + ' ' + d.getFullYear() + (s===hoy ? ' · hoy' : '');
     let html = `<div class="dia-vista"><div class="dia-cab"><div class="grande"><small>${MESES[d.getMonth()].slice(0,3)}</small><b>${d.getDate()}</b></div>
       <div class="txt">${(x=>x[0].toUpperCase()+x.slice(1))(fLarga(s))}<small>${lista.length ? lista.length+' tarea'+(lista.length>1?'s':'')+' este día' : 'Ninguna tarea este día'}</small></div></div>`;
-    html += lista.map(({t, r}) => {
-      const n = difDias(r[0], r[1]) + 1, i = difDias(r[0], s) + 1, col = colDe(t.colId), p = persona(t.personaId);
-      return `<div class="dia-t" data-t="${t.id}" style="--tc:${fondoTarea(t.color)||'#fff'};--tb:${bordeDe(t)}">
-        <b>${esc(t.titulo)}</b>
+    html += lista.map(x => {
+      const { t, r, col } = x, otro = x.tid && x.tid !== (typeof Nube !== 'undefined' && Nube.tid);
+      const n = difDias(r[0], r[1]) + 1, i = difDias(r[0], s) + 1, p = otro ? null : persona(t.personaId);
+      return `<div class="dia-t ${this.varios ? 'con-tb' : ''}" data-t="${t.id}" ${x.tid ? `data-tid="${x.tid}"` : ''} style="--tc:${fondoTarea(t.color)||'#fff'};--tb:${this.borde(x)}">
+        ${this.bola(x, this.varios)}<b>${esc(t.titulo)}</b>
         <div class="lin"><span class="tag" style="border-color:${col.color}">● ${esc(col.nombre)}</span>${t.prio?`<span class="tag prio${t.prio}">${['','Baja','Media','Alta'][t.prio]}</span>`:''}${p?`<span class="tag">👤 ${esc(nombreP(p))}</span>`:''}${vencida(t)?'<span class="tag vencida">Vencida</span>':''}</div>
         ${n > 1 ? `<div class="tramo"><i style="left:0;width:${i/n*100}%"></i></div><div class="tramo-txt">Día ${i} de ${n} · del ${fCorta(r[0])} al ${fCorta(r[1])}</div>` : '<div class="tramo-txt">Solo este día</div>'}
       </div>`;

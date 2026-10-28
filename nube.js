@@ -43,7 +43,7 @@ const Nube = {
 
   /* ---------- Arranque ---------- */
   async iniciar(){
-    addEventListener('online', () => { this.online = true; this.pintarEstado(); });
+    addEventListener('online', () => { this.online = true; this.pintarEstado(); setTimeout(() => this.subirPendiente(false), 3000); });
     addEventListener('offline', () => { this.online = false; this.pintarEstado(); });
     // ¿Viene de un email de invitación? (…/PorHacer/?invitacion=XXXX)
     const q = new URLSearchParams(location.search);
@@ -252,6 +252,7 @@ const Nube = {
       }
     }, e => this.errorSub(e)));
 
+    setTimeout(() => { if(this.tid === tid) this.subirPendiente(false); }, 6000);   // por si quedó algo sin subir
     this.subs.push(this.col('media').onSnapshot(async snap => {
       if(this.tid !== tid) return;
       this.media = snap.docs.map(d => d.data());
@@ -540,17 +541,46 @@ const Nube = {
     el.innerHTML = ico + '<span>' + txt + '</span>'; el.title = tit; el.setAttribute('aria-label', tit);
   },
   // Al tocar la nubecita: qué significa y a dónde ir
-  explicarEstado(){
+  /* ---------- Lo que está en el móvil pero aún no en la nube ---------- */
+  async pendientesMedia(){
+    const out = [];
+    for(const a of TIPOS_MEDIA){
+      const l = await DB.todos(a).catch(() => []);
+      l.filter(o => o.blob && o.tareaId && !this.media.some(m => m.id === o.id) && App.tareas.some(t => t.id === o.tareaId)).forEach(o => out.push([a, o]));
+    }
+    return out;
+  },
+  async subirPendiente(aviso){
+    if(!this.activa) return;
+    if(!this.online){ if(aviso) toast('📴 Sin internet: se subirá solo cuando vuelva la conexión'); return; }
+    if(this._pend){ if(aviso) toast('⬆️ Ya se está subiendo…'); return; }
+    this._pend = true;
+    try{
+      const l = await this.pendientesMedia();
+      if(aviso) toast(l.length ? '⬆️ Subiendo ' + l.length + (l.length > 1 ? ' archivos' : ' archivo') + '…' : '☁️ Comprobando las tareas…', null, null, 8000);
+      for(const [a, o] of l) await this.subirMedia(a, o);
+      try{ await Promise.race([this.db.waitForPendingWrites(), new Promise(r => setTimeout(r, 15000))]); }catch(e){}
+      const quedan = (await this.pendientesMedia()).length;
+      if(aviso) toast(quedan ? '⚠️ Quedan ' + quedan + ' archivos sin subir. Prueba más tarde.' : '✅ Todo está en la nube');
+    }catch(e){ console.warn(e); if(aviso) toast('⚠️ No se ha podido subir. Prueba más tarde.'); }
+    finally{ this._pend = false; this.pintarEstado(); }
+  },
+  // Al tocar la nubecita: qué significa y a dónde ir
+  async explicarEstado(){
     const tb = this.tablero, gente = tb ? new Set([tb.duenoEmail, ...this.aceptados(tb)].filter(Boolean).map(e => e.toLowerCase())).size : 1;
+    const pend = this.activa ? (await this.pendientesMedia().catch(() => [])).length : 0;
     const est = !this.activa ? ['😴', 'Sin conectar', 'Ahora mismo no estás conectada a la nube.']
       : !this.online ? ['📴', 'Sin internet', 'Puedes seguir trabajando: todo se guarda en el móvil y se subirá solo cuando vuelva internet.']
       : this.subiendo ? ['⬆️', 'Subiendo…', 'Se están subiendo ' + this.subiendo + ' fotos, vídeos o audios. Puedes seguir usando la app.']
+      : pend ? ['⏳', 'Falta subir algo', 'Hay ' + pend + (pend > 1 ? ' fotos, vídeos o audios que están' : ' foto, vídeo o audio que está') + ' en este móvil pero todavía no en la nube. Pulsa «Subir a la nube».']
       : ['✅', 'Todo al día', 'Todo lo que haces se guarda en la nube al momento' + (gente > 1 ? ' y lo ven las ' + gente + ' personas de este tablero.' : '.')];
     popup({ tit:'☁️ La nube',
       html:`<div class="nube-info"><div class="ni-ico">${est[0]}</div><b>${est[1]}</b><p>${esc(est[2])}</p>
+        ${this.activa ? `<button class="${pend ? 'btn-pri' : 'btn-sec'} ni-subir" id="niSubir">⬆️ Subir a la nube${pend ? ' (' + pend + ')' : ''}</button><p class="ni-ayuda">Revisa que todo lo de este móvil esté en la nube y sube lo que falte.</p>` : ''}
         ${tb ? `<p class="ni-tab">📋 Tablero: <b>${esc(this.nombreTablero(tb))}</b></p>` : ''}
         <p class="ni-cuenta">👤 ${esc(this.nombreYo())} · ${esc(this.email())}</p></div>`,
-      botones:[{ txt:'📋 Tableros', val:'tab' }, { txt:'Vale', cls:'btn-pri', val:null }] })
+      botones:[{ txt:'📋 Tableros', val:'tab' }, { txt:'Vale', cls:'btn-pri', val:null }],
+      alAbrir:(c, fin) => { const b = $('#niSubir', c); if(b) b.onclick = () => { fin(null); this.subirPendiente(true); }; } })
       .then(v => { if(v === 'tab'){ Ajustes.abrir(); Ajustes.tab('tableros'); } });
   },
   pantalla(html, alAbrir){

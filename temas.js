@@ -18,6 +18,41 @@ const PARTES_COLOR = [
 ];
 
 const TEMAS = {
+  // ---- Con fondo blanco ----
+  bRojo: { nombre:'Blanco y rojo', grupo:'blanco', c:{
+    bg:'#ffffff', bg2:'#f8f8fa', card:'#ffffff', colbg:'#f4f5f7', ink:'#2c2c2e', ink2:'#7c7c84', line:'#e3e4e8',
+    dark:'#3a3a3c', accent:'#e5201c', accent2:'#ff5a4e', accentInk:'#ffffff', tile1:'#ffffff', tile2:'#eeeff2' }},
+  bAzul: { nombre:'Blanco y azul', grupo:'blanco', c:{
+    bg:'#ffffff', bg2:'#f8f8fa', card:'#ffffff', colbg:'#f4f5f7', ink:'#2c2c2e', ink2:'#7c7c84', line:'#e3e4e8',
+    dark:'#1e3a5f', accent:'#2f80ed', accent2:'#5aa2f5', accentInk:'#ffffff', tile1:'#ffffff', tile2:'#eeeff2' }},
+  bCeleste: { nombre:'Blanco y azul celeste', grupo:'blanco', c:{
+    bg:'#ffffff', bg2:'#f8f8fa', card:'#ffffff', colbg:'#f4f5f7', ink:'#2c2c2e', ink2:'#7c7c84', line:'#e3e4e8',
+    dark:'#2f6690', accent:'#4aa3dc', accent2:'#75bdea', accentInk:'#ffffff', tile1:'#ffffff', tile2:'#eeeff2' }},
+  bVerde: { nombre:'Blanco y verde', grupo:'blanco', c:{
+    bg:'#ffffff', bg2:'#f8f8fa', card:'#ffffff', colbg:'#f4f5f7', ink:'#2c2c2e', ink2:'#7c7c84', line:'#e3e4e8',
+    dark:'#1f5a36', accent:'#2e9e5b', accent2:'#56c07f', accentInk:'#ffffff', tile1:'#ffffff', tile2:'#eeeff2' }},
+  bLima: { nombre:'Blanco y verde lima', grupo:'blanco', c:{
+    bg:'#ffffff', bg2:'#f8f8fa', card:'#ffffff', colbg:'#f4f5f7', ink:'#2c2c2e', ink2:'#7c7c84', line:'#e3e4e8',
+    dark:'#4f6a10', accent:'#8bb51f', accent2:'#b2d64a', accentInk:'#ffffff', tile1:'#ffffff', tile2:'#eeeff2' }},
+  bRosa: { nombre:'Blanco y rosa', grupo:'blanco', c:{
+    bg:'#ffffff', bg2:'#f8f8fa', card:'#ffffff', colbg:'#f4f5f7', ink:'#2c2c2e', ink2:'#7c7c84', line:'#e3e4e8',
+    dark:'#8e3d5e', accent:'#e0608a', accent2:'#f08eab', accentInk:'#ffffff', tile1:'#ffffff', tile2:'#eeeff2' }},
+  bLila: { nombre:'Blanco y lila', grupo:'blanco', c:{
+    bg:'#ffffff', bg2:'#f8f8fa', card:'#ffffff', colbg:'#f4f5f7', ink:'#2c2c2e', ink2:'#7c7c84', line:'#e3e4e8',
+    dark:'#4c3a7a', accent:'#8b5cf6', accent2:'#a98bfa', accentInk:'#ffffff', tile1:'#ffffff', tile2:'#eeeff2' }},
+  bNaranja: { nombre:'Blanco y naranja', grupo:'blanco', c:{
+    bg:'#ffffff', bg2:'#f8f8fa', card:'#ffffff', colbg:'#f4f5f7', ink:'#2c2c2e', ink2:'#7c7c84', line:'#e3e4e8',
+    dark:'#8a4614', accent:'#f07a1a', accent2:'#f8a050', accentInk:'#ffffff', tile1:'#ffffff', tile2:'#eeeff2' }},
+  bAmarillo: { nombre:'Blanco y amarillo', grupo:'blanco', c:{
+    bg:'#ffffff', bg2:'#f8f8fa', card:'#ffffff', colbg:'#f4f5f7', ink:'#2c2c2e', ink2:'#7c7c84', line:'#e3e4e8',
+    dark:'#6f5a08', accent:'#e8b400', accent2:'#f5d340', accentInk:'#3b3000', tile1:'#ffffff', tile2:'#eeeff2' }},
+  bMarron: { nombre:'Blanco y marrón', grupo:'blanco', c:{
+    bg:'#ffffff', bg2:'#f8f8fa', card:'#ffffff', colbg:'#f4f5f7', ink:'#2c2c2e', ink2:'#7c7c84', line:'#e3e4e8',
+    dark:'#6b4a2e', accent:'#b07a4a', accent2:'#cc9b6c', accentInk:'#ffffff', tile1:'#ffffff', tile2:'#eeeff2' }},
+  bNegro: { nombre:'Blanco y negro', grupo:'blanco', c:{
+    bg:'#ffffff', bg2:'#f8f8fa', card:'#ffffff', colbg:'#f4f5f7', ink:'#2c2c2e', ink2:'#7c7c84', line:'#e3e4e8',
+    dark:'#1c1c1e', accent:'#2c2c2e', accent2:'#55555a', accentInk:'#ffffff', tile1:'#ffffff', tile2:'#eeeff2' }},
+  // ---- Con fondo de color ----
   grises: { nombre:'Grises y rojo (como los iconos)', c:{
     bg:'#eeeff1', bg2:'#e2e3e7', card:'#ffffff', colbg:'#f7f7f9', ink:'#2c2c2e', ink2:'#7c7c84', line:'#dcdde1',
     dark:'#3a3a3c', accent:'#e5201c', accent2:'#ff5a4e', accentInk:'#ffffff', tile1:'#ffffff', tile2:'#e6e6ea' }},

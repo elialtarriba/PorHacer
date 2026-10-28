@@ -614,3 +614,39 @@ body.ya .columna, body.ya .tarjeta{animation:none}
 .marca-logo{margin-top:2px}
 #btnTablero{max-width:100%}
 @media (max-width:350px){ .marca h1{font-size:22px} .marca-logo{width:38px;height:38px} .top{padding-left:12px;padding-right:12px} }
+
+/* ===== Calendario con varios tableros ===== */
+.cal-tabs{display:flex;align-items:center;gap:8px;margin:0 16px 10px;width:calc(100% - 32px);height:40px;padding:0 12px;border-radius:13px;background:var(--card);border:1.5px solid var(--line);font-size:13.5px;font-weight:900;color:var(--dark);box-shadow:0 2px 0 rgba(0,0,0,.05);text-align:left}
+.cal-tabs[hidden]{display:none}
+.cal-tabs .ct-lbl{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal-tabs .ct-bolas{display:flex;flex:none}
+.cal-tabs .ct-bolas i,.ct-op i,#tbBurbuja i{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;color:#fff;font-style:normal;font-size:11px;font-weight:900;border:2px solid var(--card);flex:none}
+.cal-tabs .ct-bolas i+i{margin-left:-7px}
+.cal-tabs .ct-flecha{color:var(--ink2);font-size:11px}
+.ct-rapido{display:flex;gap:8px;margin-bottom:6px}
+.ct-rapido .mini-btn{flex:1}
+.ct-lista{max-height:46vh;overflow:auto}
+.ct-op{display:flex;align-items:center;gap:10px;padding:10px;border-radius:13px;background:var(--colbg);border:1.5px solid var(--line);margin-top:7px;cursor:pointer}
+.pop-cuerpo .ct-op input{all:revert;width:22px;height:22px;margin:0;flex:none;accent-color:var(--accent)}
+.ct-op i{width:28px;height:28px;font-size:13px}
+.ct-op span{display:flex;flex-direction:column;min-width:0}
+.ct-op b{font-size:14.5px;color:var(--dark);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ct-op small{font-size:11.5px;font-weight:700;color:var(--ink2)}
+.tb-bola{display:grid;place-items:center;border-radius:50%;color:#fff;font-style:normal;font-weight:900;cursor:pointer;box-shadow:0 0 0 1.5px #fff}
+.barra-t.con-tb{padding-right:17px}
+.barra-t .tb-bola{position:absolute;right:1px;top:50%;transform:translateY(-50%);width:13px;height:13px;font-size:8px;line-height:1}
+.dia-t.con-tb{position:relative;padding-right:46px}
+.dia-t .tb-bola{position:absolute;right:10px;top:10px;width:28px;height:28px;font-size:13px}
+#tbBurbuja{position:fixed;z-index:400;display:flex;align-items:center;gap:7px;max-width:calc(100vw - 20px);padding:7px 12px 7px 7px;border-radius:14px;background:var(--dark);color:#fff;font-size:13.5px;font-weight:900;box-shadow:0 8px 24px rgba(0,0,0,.25);opacity:0;transform:translateY(4px) scale(.96);pointer-events:none;transition:opacity .18s,transform .18s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#tbBurbuja.on{opacity:1;transform:none}
+#tbBurbuja i{border-color:rgba(255,255,255,.6)}
+
+.nube-info .ni-subir{width:100%;height:48px;border-radius:14px;font-size:15.5px;font-weight:900;margin-top:14px}
+.nube-info .ni-ayuda{font-size:12px;color:var(--ink2);margin-top:5px}
+
+/* Barras que se arrastran con el ratón y temas en grupos */
+@media (pointer:fine){ .tabs-scroll,.chips{cursor:grab} }
+.tabs-scroll.arrastrando,.chips.arrastrando,.tabs.arrastrando{cursor:grabbing;user-select:none;scroll-behavior:auto}
+.temas-grupo{grid-column:1/-1;font-size:13px;font-weight:900;color:var(--ink2);margin:6px 2px -2px;text-transform:uppercase;letter-spacing:.4px}
+.temas-grupo:first-child{margin-top:0}
+.tema .prev{box-shadow:inset 0 0 0 1.5px rgba(0,0,0,.08)}

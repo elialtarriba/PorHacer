@@ -90,3 +90,22 @@ Probó la V3 con su marido (rbielsa@gmail.com). Ella le había puesto en Persona
 
 ## V4.2 · Recuperar contraseña
 - Raimon no recibía el email de «He olvidado la contraseña». Ahora el email sale en español, vuelve a la app y el aviso explica: mirar Spam/Promociones, remitente noreply@porhacer-36f11.firebaseapp.com y que debe ser el mismo email de la cuenta (Firebase no avisa si el email no existe).
+
+## V4.3 · Borrar, historial y nube
+- Botón grande «🗑 Borrar esta tarea» al final de la tarea, con ventanita bonita: muestra la tarea, sus fotos/vídeos/audios/pasos y el espacio que se libera. Se puede deshacer unos segundos.
+- Historial completo de cada tarea: creada, cambios de columna, fechas, título, notas, prioridad, color, persona, pasos, fotos/vídeos/audios añadidos o borrados, emails, recordatorios, cambio de tablero, duplicada… con fecha, hora y quién. En la tarea se ven los 3 últimos y «📜 Ver todo el historial» abre una ventana agrupada por días.
+- El indicador verde de la nube ahora tiene icono (nube con ✓, nube tachada sin conexión, flecha al subir) y al tocarlo explica el estado.
+- Cabecera: la versión y la nube pasan debajo de los botones de calendario y ajustes, para que la fecha y el nombre del tablero se vean enteros.
+
+## V4.4 · Calendario con varios tableros
+- En el calendario, botón «📋 Este tablero ▾» para elegir qué tableros ver: uno, varios o todos (se recuerda en el móvil).
+- Con más de un tablero, cada tarea lleva una redonda de color con la inicial de su tablero; al tocarla sale el nombre completo.
+- Al tocar una tarea de otro tablero, pregunta si quieres ir a ese tablero y la abre.
+
+## V4.5 · Subir a la nube lo pendiente
+- Al tocar la nube: si hay fotos, vídeos o audios en el móvil que no están en la nube, lo dice y hay un botón «⬆️ Subir a la nube» (también comprueba las tareas).
+- Además lo pendiente se sube solo al abrir la app y al volver internet.
+
+## V4.6 · Ratón y temas blancos
+- Las barras de pestañas (Configuración, columnas…) se pueden arrastrar con el ratón y mover con la rueda.
+- 11 temas nuevos con fondo blanco (Blanco y rojo, azul, celeste, verde, lima, rosa, lila, naranja, amarillo, marrón, negro). En Temas salen en dos grupos: «Con fondo blanco» y «Con fondo de color».
